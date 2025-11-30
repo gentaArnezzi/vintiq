@@ -12,7 +12,7 @@ interface BackgroundSelectorProps {
 const BACKGROUNDS: { id: BackgroundStyle; name: string; class: string }[] = [
     { id: 'classic-cream', name: 'Classic Cream', class: 'bg-[#FFF8E7]' },
     { id: 'film-noir', name: 'Film Noir', class: 'bg-[#1a1a1a]' },
-    { id: 'vintage-paper', name: 'Vintage Paper', class: 'bg-[#fdfbf7] bg-[url("/noise.svg")]' },
+    { id: 'vintage-paper', name: 'Vintage Paper', class: 'bg-[#fdfbf7] bg-[url("/noise.png")]' },
     { id: 'retro-grid', name: 'Retro Grid', class: 'bg-white bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:10px_10px]' },
     { id: 'soft-pink', name: 'Soft Pink', class: 'bg-[#fce7f3]' },
     { id: 'sage-green', name: 'Sage Green', class: 'bg-[#e2e8f0]' },
