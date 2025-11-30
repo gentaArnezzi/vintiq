@@ -200,7 +200,7 @@ export default function Home() {
                             {/* Left Panel */}
                             <div className="lg:col-span-7 xl:col-span-8 space-y-6">
                                 <Card className="overflow-hidden border-stone-200 shadow-sm bg-white">
-                                    <div className="p-1">
+                                    <div className="p-6">
                                         {mode === 'camera' && (
                                             <CameraCapture
                                                 onPhotoCapture={handlePhotoCapture}
