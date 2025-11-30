@@ -130,7 +130,7 @@ export default function PhotostripPreview({
             </div>
 
             <p className="text-center text-xs text-stone-400 mt-4">
-                Click 'X' on photo to retake
+                Click &apos;X&apos; on photo to retake
             </p>
         </div>
     );

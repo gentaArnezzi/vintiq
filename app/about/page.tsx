@@ -1,3 +1,5 @@
+import Link from 'next/link';
+
 export default function AboutPage() {
     return (
         <div className="min-h-screen py-16 px-4">
@@ -39,7 +41,7 @@ export default function AboutPage() {
 
                         <section>
                             <h2 className="text-2xl font-semibold text-vintage-brown mb-3">
-                                Privacy & Security
+                                Privacy &amp; Security
                             </h2>
                             <div className="bg-vintage-cream rounded-lg p-4 border-l-4 border-vintage-brown">
                                 <p className="leading-relaxed">
@@ -103,9 +105,9 @@ export default function AboutPage() {
 
                     {/* Back Button */}
                     <div className="mt-10 text-center">
-                        <a href="/" className="vintage-button-secondary inline-block px-8">
+                        <Link href="/" className="vintage-button-secondary inline-block px-8">
                             ← Back to Photobooth
-                        </a>
+                        </Link>
                     </div>
                 </div>
             </div>
