@@ -1,0 +1,5 @@
+<svg width="200" height="60" viewBox="0 0 200 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <text x="10" y="40" font-family="Inter, sans-serif" font-size="32" font-weight="700" fill="#8B4513">Vintiq</text>
+  <circle cx="180" cy="30" r="15" fill="#FFD4A3" opacity="0.8"/>
+  <circle cx="185" cy="25" r="8" fill="#FFF8E7"/>
+</svg>
