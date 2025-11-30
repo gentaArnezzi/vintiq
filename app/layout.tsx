@@ -35,10 +35,9 @@ export default function RootLayout({
         <html lang="en">
             <body className={`${playfair.variable} ${dmSans.variable} font-sans antialiased bg-vintage-cream vintage-gradient text-stone-900 min-h-screen flex flex-col`}>
                 <header className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-sm border-b border-vintage-yellow shadow-sm">
-                    <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                            <h1 className="text-2xl font-bold text-vintage-brown">Vintiq</h1>
-                            <span className="text-sm text-vintage-sepia">Vintage Photobooth</span>
+                    <div className="max-w-7xl mx-auto px-4 py-2 flex items-center justify-between">
+                        <div className="flex items-center">
+                            <img src="/logo-cropped.png" alt="Vintiq" className="h-12 w-auto" />
                         </div>
                         <div className="flex items-center gap-4">
                             <a
