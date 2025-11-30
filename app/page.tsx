@@ -10,7 +10,8 @@ import PhotostripPreview from '@/components/photostrip-preview';
 import FilterSelector from '@/components/filter-selector';
 import ResultModal from '@/components/result-modal';
 import ErrorMessage from '@/components/error-message';
-import { generatePhotostrip } from '@/lib/canvas-generator';
+import BackgroundSelector from '@/components/background-selector';
+import { generatePhotostrip, type BackgroundStyle } from '@/lib/canvas-generator';
 import type { FilterType } from '@/lib/image-filters';
 
 type PhotoMode = 'select' | 'camera' | 'upload';
@@ -21,6 +22,7 @@ export default function Home() {
     const [mode, setMode] = useState<PhotoMode>('select');
     const [photos, setPhotos] = useState<(string | null)[]>(Array(MAX_PHOTOS).fill(null));
     const [selectedFilter, setSelectedFilter] = useState<FilterType>('vintiq-warm');
+    const [selectedBackground, setSelectedBackground] = useState<BackgroundStyle>('classic-cream');
     const [isGenerating, setIsGenerating] = useState(false);
     const [generatedStrip, setGeneratedStrip] = useState<HTMLCanvasElement | null>(null);
     const [error, setError] = useState<string>('');
@@ -100,6 +102,7 @@ export default function Home() {
                 photos: validPhotos,
                 filter: selectedFilter,
                 layout: 'vertical-4',
+                background: selectedBackground,
             });
             setGeneratedStrip(canvas);
         } catch (err) {
@@ -112,7 +115,7 @@ export default function Home() {
     };
 
     return (
-        <div className="min-h-screen bg-vintage-cream vintage-gradient text-stone-800 font-sans selection:bg-stone-200">
+        <div className="min-h-screen text-stone-800 font-sans selection:bg-stone-200">
             <div className="max-w-6xl mx-auto px-4 py-12 md:py-20">
 
                 {/* Header */}
@@ -193,7 +196,7 @@ export default function Home() {
                             </div>
                         </div>
 
-                        <div className="grid lg:grid-cols-12 gap-8 lg:gap-12 items-start">
+                        <div className="grid lg:grid-cols-12 gap-8 lg:gap-12">
                             {/* Left Panel */}
                             <div className="lg:col-span-7 xl:col-span-8 space-y-6">
                                 <Card className="overflow-hidden border-stone-200 shadow-sm bg-white">
@@ -227,44 +230,55 @@ export default function Home() {
                                         Reset Session
                                     </Button>
                                 </div>
-                            </div>
 
-                            {/* Right Panel */}
-                            <div className="lg:col-span-5 xl:col-span-4 space-y-8">
-                                <PhotostripPreview
-                                    photos={photos}
-                                    currentSlot={currentSlot === -1 ? MAX_PHOTOS : currentSlot}
-                                    onRemovePhoto={handleRemovePhoto}
-                                    maxPhotos={MAX_PHOTOS}
-                                />
-
+                                {/* Customization Controls (Moved here) */}
                                 {allPhotosCaptured && (
-                                    <div className="space-y-6 animate-fade-in">
-                                        <div className="border-t border-stone-200 pt-6">
-                                            <h3 className="text-lg font-serif font-medium mb-4">Select Filter</h3>
+                                    <div className="space-y-8 animate-fade-in pt-4">
+                                        <div className="bg-white p-6 rounded-xl border border-stone-200 shadow-sm">
+                                            <h3 className="text-lg font-serif font-medium mb-4">1. Choose Filter</h3>
                                             <FilterSelector
                                                 selectedFilter={selectedFilter}
                                                 onFilterChange={setSelectedFilter}
                                             />
                                         </div>
 
+                                        <div className="bg-white p-6 rounded-xl border border-stone-200 shadow-sm">
+                                            <h3 className="text-lg font-serif font-medium mb-4">2. Choose Background</h3>
+                                            <BackgroundSelector
+                                                selectedBackground={selectedBackground}
+                                                onBackgroundChange={setSelectedBackground}
+                                            />
+                                        </div>
+
                                         <Button
                                             onClick={handleGenerate}
                                             disabled={isGenerating}
-                                            className="w-full h-14 text-lg bg-stone-900 hover:bg-stone-800 text-white font-medium rounded-xl shadow-lg shadow-stone-200 transition-all hover:shadow-xl hover:-translate-y-0.5"
+                                            className="w-full h-16 text-xl bg-stone-900 hover:bg-stone-800 text-white font-medium rounded-xl shadow-lg shadow-stone-200 transition-all hover:shadow-xl hover:-translate-y-0.5"
                                         >
                                             {isGenerating ? (
                                                 <span className="flex items-center gap-2">
-                                                    <RotateCcw className="w-5 h-5 animate-spin" /> Generating...
+                                                    <RotateCcw className="w-6 h-6 animate-spin" /> Processing...
                                                 </span>
                                             ) : (
                                                 <span className="flex items-center gap-2">
-                                                    Generate Photostrip <ArrowRight className="w-5 h-5" />
+                                                    Finalize & Download <ArrowRight className="w-6 h-6" />
                                                 </span>
                                             )}
                                         </Button>
                                     </div>
                                 )}
+                            </div>
+
+                            {/* Right Panel (Preview Only) */}
+                            <div className="lg:col-span-5 xl:col-span-4 space-y-8">
+                                <PhotostripPreview
+                                    photos={photos}
+                                    currentSlot={currentSlot === -1 ? MAX_PHOTOS : currentSlot}
+                                    onRemovePhoto={handleRemovePhoto}
+                                    maxPhotos={MAX_PHOTOS}
+                                    filter={selectedFilter}
+                                    background={selectedBackground}
+                                />
                             </div>
                         </div>
                     </div>

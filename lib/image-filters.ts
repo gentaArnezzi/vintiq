@@ -1,131 +1,242 @@
-// Vintage filter implementations
-
-export type FilterType = 'vintiq-warm' | 'sepia' | 'mono';
+export type FilterType =
+    | 'vintiq-warm'
+    | 'sepia-classic'
+    | 'mono-film'
+    | 'polaroid-fade'
+    | 'kodak-gold'
+    | 'fuji-superia'
+    | 'drama-bw'
+    | 'cinematic-cool';
 
 export interface FilterConfig {
     name: string;
     displayName: string;
     description: string;
+    apply: (ctx: CanvasRenderingContext2D, width: number, height: number) => void;
 }
 
 export const FILTERS: Record<FilterType, FilterConfig> = {
     'vintiq-warm': {
         name: 'vintiq-warm',
         displayName: 'Vintiq Warm',
-        description: 'Warm tones with vintage fade',
+        description: 'Soft warm tones with vintage fade',
+        apply: (ctx, width, height) => {
+            const imageData = ctx.getImageData(0, 0, width, height);
+            const data = imageData.data;
+
+            for (let i = 0; i < data.length; i += 4) {
+                const r = data[i];
+                const g = data[i + 1];
+                const b = data[i + 2];
+
+                // Warmth + Fade
+                data[i] = r * 1.1 + 10;     // Red boost
+                data[i + 1] = g * 1.0 + 5;  // Green slight boost
+                data[i + 2] = b * 0.9;      // Blue reduce
+            }
+            ctx.putImageData(imageData, 0, 0);
+
+            // Overlay warm color
+            ctx.globalCompositeOperation = 'overlay';
+            ctx.fillStyle = 'rgba(255, 200, 150, 0.15)';
+            ctx.fillRect(0, 0, width, height);
+            ctx.globalCompositeOperation = 'source-over';
+        },
     },
-    'sepia': {
-        name: 'sepia',
+    'sepia-classic': {
+        name: 'sepia-classic',
         displayName: 'Sepia Classic',
-        description: 'Classic sepia brown tones',
+        description: 'Traditional brown photobooth look',
+        apply: (ctx, width, height) => {
+            const imageData = ctx.getImageData(0, 0, width, height);
+            const data = imageData.data;
+
+            for (let i = 0; i < data.length; i += 4) {
+                const r = data[i];
+                const g = data[i + 1];
+                const b = data[i + 2];
+
+                // Sepia formula
+                data[i] = (r * 0.393) + (g * 0.769) + (b * 0.189);
+                data[i + 1] = (r * 0.349) + (g * 0.686) + (b * 0.168);
+                data[i + 2] = (r * 0.272) + (g * 0.534) + (b * 0.131);
+            }
+            ctx.putImageData(imageData, 0, 0);
+        },
     },
-    'mono': {
-        name: 'mono',
+    'mono-film': {
+        name: 'mono-film',
         displayName: 'Mono Film',
-        description: 'Soft black & white film',
+        description: 'Soft B&W with subtle grain',
+        apply: (ctx, width, height) => {
+            const imageData = ctx.getImageData(0, 0, width, height);
+            const data = imageData.data;
+
+            for (let i = 0; i < data.length; i += 4) {
+                const r = data[i];
+                const g = data[i + 1];
+                const b = data[i + 2];
+
+                // Grayscale
+                const gray = 0.299 * r + 0.587 * g + 0.114 * b;
+
+                // Add contrast
+                const contrast = 1.1;
+                const factor = (259 * (contrast + 255)) / (255 * (259 - contrast));
+                const cGray = factor * (gray - 128) + 128;
+
+                data[i] = cGray;
+                data[i + 1] = cGray;
+                data[i + 2] = cGray;
+            }
+            ctx.putImageData(imageData, 0, 0);
+        },
     },
-};
+    'polaroid-fade': {
+        name: 'polaroid-fade',
+        displayName: 'Polaroid Fade',
+        description: 'Washed out with blue shadows',
+        apply: (ctx, width, height) => {
+            const imageData = ctx.getImageData(0, 0, width, height);
+            const data = imageData.data;
 
-/**
- * Apply Vintiq Warm filter
- * Warm tone, slight fade, reduced contrast
- */
-export function applyVintiqWarm(ctx: CanvasRenderingContext2D, width: number, height: number): void {
-    const imageData = ctx.getImageData(0, 0, width, height);
-    const data = imageData.data;
+            for (let i = 0; i < data.length; i += 4) {
+                const r = data[i];
+                const g = data[i + 1];
+                const b = data[i + 2];
 
-    for (let i = 0; i < data.length; i += 4) {
-        // Increase red channel
-        data[i] = Math.min(255, data[i] * 1.15);
+                // Lift blacks (fade)
+                data[i] = r * 0.9 + 20;
+                data[i + 1] = g * 0.9 + 20;
+                data[i + 2] = b * 1.1 + 20; // Blue tint in shadows
+            }
+            ctx.putImageData(imageData, 0, 0);
 
-        // Slightly increase green
-        data[i + 1] = Math.min(255, data[i + 1] * 1.05);
+            // Soft light overlay
+            ctx.globalCompositeOperation = 'soft-light';
+            ctx.fillStyle = 'rgba(200, 220, 255, 0.2)';
+            ctx.fillRect(0, 0, width, height);
+            ctx.globalCompositeOperation = 'source-over';
+        }
+    },
+    'kodak-gold': {
+        name: 'kodak-gold',
+        displayName: 'Kodak Gold',
+        description: 'Vibrant yellows and rich contrast',
+        apply: (ctx, width, height) => {
+            // Warm overlay first
+            ctx.globalCompositeOperation = 'overlay';
+            ctx.fillStyle = 'rgba(255, 220, 100, 0.2)';
+            ctx.fillRect(0, 0, width, height);
+            ctx.globalCompositeOperation = 'source-over';
 
-        // Slightly decrease blue  
-        data[i + 2] = data[i + 2] * 0.9;
+            const imageData = ctx.getImageData(0, 0, width, height);
+            const data = imageData.data;
 
-        // Add slight fade (increase brightness of darker areas)
-        const avg = (data[i] + data[i + 1] + data[i + 2]) / 3;
-        if (avg < 128) {
-            data[i] = data[i] + (128 - avg) * 0.1;
-            data[i + 1] = data[i + 1] + (128 - avg) * 0.1;
-            data[i + 2] = data[i + 2] + (128 - avg) * 0.1;
+            for (let i = 0; i < data.length; i += 4) {
+                // Increase saturation slightly
+                const r = data[i];
+                const g = data[i + 1];
+                const b = data[i + 2];
+
+                data[i] = r * 1.1;
+                data[i + 1] = g * 1.05;
+                data[i + 2] = b * 0.9;
+            }
+            ctx.putImageData(imageData, 0, 0);
+        }
+    },
+    'fuji-superia': {
+        name: 'fuji-superia',
+        displayName: 'Fuji Superia',
+        description: 'Cool greens and magenta tints',
+        apply: (ctx, width, height) => {
+            const imageData = ctx.getImageData(0, 0, width, height);
+            const data = imageData.data;
+
+            for (let i = 0; i < data.length; i += 4) {
+                const r = data[i];
+                const g = data[i + 1];
+                const b = data[i + 2];
+
+                data[i] = r * 0.95;
+                data[i + 1] = g * 1.05; // Green boost
+                data[i + 2] = b * 1.05; // Blue boost
+            }
+            ctx.putImageData(imageData, 0, 0);
+
+            // Magenta tint in highlights
+            ctx.globalCompositeOperation = 'screen';
+            ctx.fillStyle = 'rgba(255, 0, 255, 0.05)';
+            ctx.fillRect(0, 0, width, height);
+            ctx.globalCompositeOperation = 'source-over';
+        }
+    },
+    'drama-bw': {
+        name: 'drama-bw',
+        displayName: 'Drama B&W',
+        description: 'High contrast black and white',
+        apply: (ctx, width, height) => {
+            const imageData = ctx.getImageData(0, 0, width, height);
+            const data = imageData.data;
+
+            for (let i = 0; i < data.length; i += 4) {
+                const r = data[i];
+                const g = data[i + 1];
+                const b = data[i + 2];
+
+                // Grayscale
+                let gray = 0.299 * r + 0.587 * g + 0.114 * b;
+
+                // High contrast curve
+                if (gray > 128) gray = gray * 1.2;
+                else gray = gray * 0.8;
+
+                // Clamp
+                gray = Math.min(255, Math.max(0, gray));
+
+                data[i] = gray;
+                data[i + 1] = gray;
+                data[i + 2] = gray;
+            }
+            ctx.putImageData(imageData, 0, 0);
+        }
+    },
+    'cinematic-cool': {
+        name: 'cinematic-cool',
+        displayName: 'Cinematic',
+        description: 'Teal and orange movie look',
+        apply: (ctx, width, height) => {
+            const imageData = ctx.getImageData(0, 0, width, height);
+            const data = imageData.data;
+
+            for (let i = 0; i < data.length; i += 4) {
+                const r = data[i];
+                const g = data[i + 1];
+                const b = data[i + 2];
+
+                // Shadows -> Teal, Highlights -> Orange
+                // Simple approximation
+                data[i] = r * 1.1; // Red boost (orange)
+                data[i + 1] = g * 1.0;
+                data[i + 2] = b * 1.2; // Blue boost (teal)
+            }
+            ctx.putImageData(imageData, 0, 0);
         }
     }
-
-    ctx.putImageData(imageData, 0, 0);
-}
-
-/**
- * Apply Sepia Classic filter
- * Traditional sepia tone effect
- */
-export function applySepiaClassic(ctx: CanvasRenderingContext2D, width: number, height: number): void {
-    const imageData = ctx.getImageData(0, 0, width, height);
-    const data = imageData.data;
-
-    for (let i = 0; i < data.length; i += 4) {
-        const r = data[i];
-        const g = data[i + 1];
-        const b = data[i + 2];
-
-        // Sepia formula
-        data[i] = Math.min(255, (r * 0.393) + (g * 0.769) + (b * 0.189));     // Red
-        data[i + 1] = Math.min(255, (r * 0.349) + (g * 0.686) + (b * 0.168)); // Green
-        data[i + 2] = Math.min(255, (r * 0.272) + (g * 0.534) + (b * 0.131)); // Blue
-    }
-
-    ctx.putImageData(imageData, 0, 0);
-}
-
-/**
- * Apply Mono Film filter
- * Soft black & white with subtle grain
- */
-export function applyMonoFilm(ctx: CanvasRenderingContext2D, width: number, height: number): void {
-    const imageData = ctx.getImageData(0, 0, width, height);
-    const data = imageData.data;
-
-    for (let i = 0; i < data.length; i += 4) {
-        // Convert to grayscale using luminosity method
-        const gray = (data[i] * 0.299) + (data[i + 1] * 0.587) + (data[i + 2] * 0.114);
-
-        // Add subtle grain (random noise)
-        const noise = (Math.random() - 0.5) * 10;
-        const grayWithNoise = Math.min(255, Math.max(0, gray + noise));
-
-        // Soften by reducing contrast slightly
-        const softGray = grayWithNoise * 0.95 + 12;
-
-        data[i] = softGray;     // Red
-        data[i + 1] = softGray; // Green
-        data[i + 2] = softGray; // Blue
-    }
-
-    ctx.putImageData(imageData, 0, 0);
-}
+};
 
 /**
  * Apply selected filter to canvas
  */
 export function applyFilter(
-    canvas: HTMLCanvasElement,
+    ctx: CanvasRenderingContext2D,
+    width: number,
+    height: number,
     filterType: FilterType
 ): void {
-    const ctx = canvas.getContext('2d');
-    if (!ctx) {
-        throw new Error('Failed to get canvas context');
-    }
-
-    switch (filterType) {
-        case 'vintiq-warm':
-            applyVintiqWarm(ctx, canvas.width, canvas.height);
-            break;
-        case 'sepia':
-            applySepiaClassic(ctx, canvas.width, canvas.height);
-            break;
-        case 'mono':
-            applyMonoFilm(ctx, canvas.width, canvas.height);
-            break;
+    const filter = FILTERS[filterType];
+    if (filter) {
+        filter.apply(ctx, width, height);
     }
 }
