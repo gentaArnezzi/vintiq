@@ -5,6 +5,7 @@ import { X, RotateCcw } from 'lucide-react';
 import { generatePhotostrip, type BackgroundStyle } from '@/lib/canvas-generator';
 import type { FilterType } from '@/lib/image-filters';
 import LivePhotoPreview from './live-photo-preview';
+import { applyFilter } from '@/lib/image-filters';
 
 interface PhotostripPreviewProps {
     photos: (string | null)[];
@@ -74,16 +75,33 @@ export default function PhotostripPreview({
     ];
 
     // Map filter type to CSS filter string for video preview
+    // Updated to match pixel-based filters more closely
     const getFilterStyle = (type: FilterType): string => {
         switch (type) {
-            case 'vintiq-warm': return 'sepia(0.2) contrast(0.9) brightness(1.1) saturate(1.1)';
-            case 'sepia-classic': return 'sepia(0.8) contrast(0.9)';
-            case 'mono-film': return 'grayscale(1) contrast(1.1)';
-            case 'polaroid-fade': return 'brightness(1.1) contrast(0.9) saturate(0.8)';
-            case 'kodak-gold': return 'saturate(1.2) contrast(1.1) sepia(0.1)';
-            case 'fuji-superia': return 'saturate(1.1) hue-rotate(-10deg)';
-            case 'drama-bw': return 'grayscale(1) contrast(1.3)';
-            case 'cinematic-cool': return 'contrast(1.1) saturate(1.1)';
+            case 'vintiq-warm': 
+                // Red boost, blue reduce, warm overlay
+                return 'sepia(0.15) saturate(1.15) brightness(1.08) contrast(0.95)';
+            case 'sepia-classic': 
+                // Traditional sepia
+                return 'sepia(0.8) contrast(0.9)';
+            case 'mono-film': 
+                // Grayscale with contrast
+                return 'grayscale(1) contrast(1.1)';
+            case 'polaroid-fade': 
+                // Fade with blue tint
+                return 'brightness(1.1) contrast(0.9) saturate(0.85) hue-rotate(5deg)';
+            case 'kodak-gold': 
+                // Warm yellow tones
+                return 'sepia(0.1) saturate(1.2) brightness(1.05) contrast(1.05)';
+            case 'fuji-superia': 
+                // Cool greens and magenta
+                return 'saturate(1.1) hue-rotate(-8deg) contrast(1.02)';
+            case 'drama-bw': 
+                // High contrast B&W
+                return 'grayscale(1) contrast(1.3) brightness(1.05)';
+            case 'cinematic-cool': 
+                // Teal and orange
+                return 'saturate(1.15) hue-rotate(-5deg) contrast(1.1) brightness(1.05)';
             default: return '';
         }
     };
@@ -130,7 +148,7 @@ export default function PhotostripPreview({
                                                         videoBlob={livePhoto}
                                                         stillImage={photos[index]!}
                                                         variant="compact"
-                                                        filterStyle={getFilterStyle(filter)}
+                                                        filterType={filter}
                                                         className="w-full h-full"
                                                     />
                                                 </div>

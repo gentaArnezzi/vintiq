@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { Play, Pause, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import type { FilterType } from '@/lib/image-filters';
+import { applyFilter } from '@/lib/image-filters';
 
 interface LivePhotoPreviewProps {
     videoBlob: Blob | null;
@@ -10,7 +12,8 @@ interface LivePhotoPreviewProps {
     onDownload?: () => void;
     variant?: 'default' | 'compact';
     className?: string;
-    filterStyle?: string;
+    filterStyle?: string; // Deprecated, use filterType instead
+    filterType?: FilterType; // Use pixel-based filter
 }
 
 export default function LivePhotoPreview({
@@ -20,11 +23,14 @@ export default function LivePhotoPreview({
     variant = 'default',
     className = '',
     filterStyle = '',
+    filterType,
 }: LivePhotoPreviewProps) {
     const videoRef = useRef<HTMLVideoElement>(null);
+    const canvasRef = useRef<HTMLCanvasElement>(null);
     const [isPlaying, setIsPlaying] = useState(false);
     const [videoUrl, setVideoUrl] = useState<string>('');
     const [isHovering, setIsHovering] = useState(false);
+    const animationFrameRef = useRef<number>();
 
     // Create URL from blob
     useEffect(() => {
@@ -37,6 +43,84 @@ export default function LivePhotoPreview({
             };
         }
     }, [videoBlob]);
+
+    // Render video frame to canvas with pixel-based filter
+    useEffect(() => {
+        const video = videoRef.current;
+        const canvas = canvasRef.current;
+        if (!video || !canvas || !filterType) return;
+
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+
+        // Get container dimensions
+        const container = canvas.parentElement;
+        if (!container) return;
+
+        const updateCanvasSize = () => {
+            const rect = container.getBoundingClientRect();
+            canvas.style.width = `${rect.width}px`;
+            canvas.style.height = `${rect.height}px`;
+        };
+
+        updateCanvasSize();
+
+        const drawFrame = () => {
+            if (video.readyState >= 2 && !video.paused) {
+                const videoWidth = video.videoWidth || 1;
+                const videoHeight = video.videoHeight || 1;
+                const containerWidth = container.clientWidth;
+                const containerHeight = container.clientHeight;
+                
+                // Set canvas internal size to match video aspect ratio, scaled to container
+                const scale = Math.min(containerWidth / videoWidth, containerHeight / videoHeight);
+                const width = videoWidth * scale;
+                const height = videoHeight * scale;
+                
+                canvas.width = width;
+                canvas.height = height;
+
+                // Draw video frame covering the area (center crop)
+                ctx.drawImage(video, 0, 0, width, height);
+
+                // Apply pixel-based filter (same as canvas generator)
+                applyFilter(ctx, width, height, filterType);
+
+                animationFrameRef.current = requestAnimationFrame(drawFrame);
+            }
+        };
+
+        if (isPlaying && isHovering) {
+            drawFrame();
+        } else {
+            if (animationFrameRef.current) {
+                cancelAnimationFrame(animationFrameRef.current);
+            }
+            // Draw still image with filter when not playing
+            if (stillImage && filterType) {
+                const img = new Image();
+                img.onload = () => {
+                    const containerWidth = container.clientWidth;
+                    const containerHeight = container.clientHeight;
+                    const scale = Math.min(containerWidth / img.width, containerHeight / img.height);
+                    const width = img.width * scale;
+                    const height = img.height * scale;
+                    
+                    canvas.width = width;
+                    canvas.height = height;
+                    ctx.drawImage(img, 0, 0, width, height);
+                    applyFilter(ctx, width, height, filterType);
+                };
+                img.src = stillImage;
+            }
+        }
+
+        return () => {
+            if (animationFrameRef.current) {
+                cancelAnimationFrame(animationFrameRef.current);
+            }
+        };
+    }, [isPlaying, isHovering, videoUrl, filterType, stillImage]);
 
     // Auto-play on hover (like iOS Photos)
     useEffect(() => {
@@ -104,12 +188,20 @@ export default function LivePhotoPreview({
                 onMouseLeave={() => setIsHovering(false)}
                 onClick={togglePlay}
             >
-                {/* Video Player */}
+                {/* Canvas for filtered video (if filterType provided) */}
+                {filterType ? (
+                    <canvas
+                        ref={canvasRef}
+                        className="w-full h-full object-cover"
+                    />
+                ) : null}
+                
+                {/* Video Player (hidden if using canvas filter) */}
                 <video
                     ref={videoRef}
                     src={videoUrl || undefined}
-                    className="w-full h-full object-cover"
-                    style={{ filter: filterStyle }}
+                    className={filterType ? 'hidden' : 'w-full h-full object-cover'}
+                    style={filterType ? {} : { filter: filterStyle }}
                     loop
                     playsInline
                     muted

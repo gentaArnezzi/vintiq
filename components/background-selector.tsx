@@ -11,11 +11,20 @@ interface BackgroundSelectorProps {
 
 const BACKGROUNDS: { id: BackgroundStyle; name: string; class: string }[] = [
     { id: 'classic-cream', name: 'Classic Cream', class: 'bg-[#FFF8E7]' },
-    { id: 'film-noir', name: 'Film Noir', class: 'bg-[#1a1a1a]' },
     { id: 'vintage-paper', name: 'Vintage Paper', class: 'bg-[#fdfbf7] bg-[url("/noise.png")]' },
     { id: 'retro-grid', name: 'Retro Grid', class: 'bg-white bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:10px_10px]' },
-    { id: 'soft-pink', name: 'Soft Pink', class: 'bg-[#fce7f3]' },
-    { id: 'sage-green', name: 'Sage Green', class: 'bg-[#e2e8f0]' },
+    { id: 'torn-paper', name: 'Torn Paper', class: 'bg-[#f5f1e8]' },
+    { id: 'tape-edges', name: 'Tape Edges', class: 'bg-[#fef9e7]' },
+    { id: 'folded-corners', name: 'Folded Corners', class: 'bg-[#faf8f3]' },
+    { id: 'stained-paper', name: 'Stained Paper', class: 'bg-[#f9f6f0]' },
+    { id: 'staples-edges', name: 'Staples Edges', class: 'bg-[#fdfbf7]' },
+    { id: 'worn-vintage', name: 'Worn Vintage', class: 'bg-[#f4f0e6]' },
+    { id: 'wood-texture', name: 'Wood Texture', class: 'bg-[#d4a574]' },
+    { id: 'vintage-wood', name: 'Vintage Wood', class: 'bg-[#8b6f47]' },
+    { id: 'camera-roll-film', name: 'Camera Roll Film', class: 'bg-[#1a1a1a]' },
+    { id: 'aged-wood', name: 'Aged Wood', class: 'bg-[#6b5238]' },
+    { id: 'weathered-wood', name: 'Weathered Wood', class: 'bg-[#5a4530]' },
+    { id: 'barn-wood', name: 'Barn Wood', class: 'bg-[#7a5f42]' },
 ];
 
 export default function BackgroundSelector({
