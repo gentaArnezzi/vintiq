@@ -173,6 +173,10 @@ export default function CameraCapture({
                         }
                     } catch (videoError) {
                         console.error('Live photo generation failed:', videoError);
+                        // Show user-friendly error for Safari compatibility
+                        if (videoError instanceof Error && videoError.message.includes('MediaRecorder')) {
+                            onError('Live photo tidak didukung di browser ini. Silakan nonaktifkan Live Photo atau gunakan browser lain (Chrome, Firefox, atau Safari 14+).');
+                        }
                         // Continue without live photo
                     } finally {
                         setIsGeneratingVideo(false);

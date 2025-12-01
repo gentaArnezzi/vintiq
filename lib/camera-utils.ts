@@ -227,6 +227,7 @@ export class LivePhotoCapture {
 
 /**
  * Convert frames to video using MediaRecorder (modern approach)
+ * Safari-compatible with codec detection
  */
 export async function createVideoFromFrames(
     frames: string[],
@@ -234,36 +235,92 @@ export async function createVideoFromFrames(
 ): Promise<Blob> {
     return new Promise((resolve, reject) => {
         try {
+            // Check if MediaRecorder is supported
+            if (typeof MediaRecorder === 'undefined') {
+                reject(new Error('MediaRecorder is not supported in this browser. Please use a modern browser like Chrome, Firefox, or Safari 14+'));
+                return;
+            }
+
+            // Check if captureStream is supported
+            if (typeof HTMLCanvasElement.prototype.captureStream === 'undefined') {
+                reject(new Error('Canvas captureStream is not supported in this browser'));
+                return;
+            }
+
             // Create a temporary video element and canvas
             const canvas = document.createElement('canvas');
             const video = document.createElement('video');
             const stream = canvas.captureStream(fps);
 
+            // Detect supported codec (Safari needs H.264/MP4, Chrome/Firefox can use WebM)
+            let mimeType = 'video/webm'; // Default fallback
+            let blobType = 'video/webm';
+            
+            // Try MP4 with H.264 first (Safari/iOS compatible)
+            if (MediaRecorder.isTypeSupported('video/mp4;codecs=h264')) {
+                mimeType = 'video/mp4;codecs=h264';
+                blobType = 'video/mp4';
+            } else if (MediaRecorder.isTypeSupported('video/mp4;codecs=avc1.42E01E')) {
+                mimeType = 'video/mp4;codecs=avc1.42E01E'; // H.264 baseline
+                blobType = 'video/mp4';
+            } else if (MediaRecorder.isTypeSupported('video/mp4')) {
+                mimeType = 'video/mp4';
+                blobType = 'video/mp4';
+            } else if (MediaRecorder.isTypeSupported('video/webm;codecs=vp9')) {
+                mimeType = 'video/webm;codecs=vp9';
+                blobType = 'video/webm';
+            } else if (MediaRecorder.isTypeSupported('video/webm;codecs=vp8')) {
+                mimeType = 'video/webm;codecs=vp8';
+                blobType = 'video/webm';
+            } else if (MediaRecorder.isTypeSupported('video/webm')) {
+                mimeType = 'video/webm';
+                blobType = 'video/webm';
+            }
+
             // Use MediaRecorder to create video
-            const mediaRecorder = new MediaRecorder(stream, {
-                mimeType: 'video/webm;codecs=vp9',
-                videoBitsPerSecond: 2500000 // 2.5 Mbps
-            });
+            let mediaRecorder: MediaRecorder;
+            try {
+                mediaRecorder = new MediaRecorder(stream, {
+                    mimeType: mimeType,
+                    videoBitsPerSecond: 2500000 // 2.5 Mbps
+                });
+            } catch (error) {
+                reject(new Error(`Failed to create MediaRecorder with ${mimeType}. Your browser may not support this codec.`));
+                return;
+            }
 
             const chunks: Blob[] = [];
 
             mediaRecorder.ondataavailable = (e) => {
-                if (e.data.size > 0) {
+                if (e.data && e.data.size > 0) {
                     chunks.push(e.data);
                 }
             };
 
             mediaRecorder.onstop = () => {
-                const blob = new Blob(chunks, { type: 'video/webm' });
-                resolve(blob);
+                try {
+                    const blob = new Blob(chunks, { type: blobType });
+                    if (blob.size === 0) {
+                        reject(new Error('Generated video is empty. This may be a browser compatibility issue.'));
+                        return;
+                    }
+                    resolve(blob);
+                } catch (error) {
+                    reject(new Error('Failed to create video blob: ' + (error instanceof Error ? error.message : String(error))));
+                }
             };
 
-            mediaRecorder.onerror = (e) => {
-                reject(new Error('MediaRecorder error: ' + e));
+            mediaRecorder.onerror = (event) => {
+                reject(new Error('MediaRecorder error: ' + (event.error?.message || 'Unknown error')));
             };
 
-            // Start recording
-            mediaRecorder.start();
+            // Start recording with error handling
+            try {
+                mediaRecorder.start(100); // Request data every 100ms for better Safari compatibility
+            } catch (error) {
+                reject(new Error('Failed to start MediaRecorder: ' + (error instanceof Error ? error.message : String(error))));
+                return;
+            }
 
             // Draw frames sequentially
             const ctx = canvas.getContext('2d');
