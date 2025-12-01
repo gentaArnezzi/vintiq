@@ -1556,6 +1556,8 @@ export async function generateLiveStripVideo({
 }
 
 // Helper to map FilterType to Canvas filter string
+// Note: This function is deprecated - filters are now applied using pixel-based processing
+// Keeping for backward compatibility but should not be used
 function getCanvasFilterString(type: FilterType): string {
     switch (type) {
         case 'vintiq-warm': return 'sepia(0.2) contrast(0.9) brightness(1.1) saturate(1.1)';
@@ -1565,20 +1567,8 @@ function getCanvasFilterString(type: FilterType): string {
         case 'kodak-gold': return 'saturate(1.2) contrast(1.1) sepia(0.1)';
         case 'fuji-superia': return 'saturate(1.1) hue-rotate(-10deg)';
         case 'drama-bw': return 'grayscale(1) contrast(1.3)';
-        case 'vintage-amber': return 'sepia(0.3) contrast(1.0) brightness(1.05) saturate(1.15)';
-        case 'warm-sunset': return 'sepia(0.2) saturate(1.2) brightness(1.1) contrast(1.05)';
-        case 'film-grain': return 'contrast(1.05) brightness(1.02)';
-        case 'cross-process': return 'saturate(1.3) contrast(1.1) brightness(1.05)';
-        case 'vintage-rose': return 'saturate(1.1) sepia(0.1) brightness(1.05)';
-        case 'golden-hour': return 'sepia(0.25) saturate(1.15) brightness(1.1) contrast(1.05)';
-        case 'silver-toned': return 'grayscale(0.9) sepia(0.1) hue-rotate(200deg) contrast(1.1)';
-        case 'vintage-green': return 'saturate(1.1) hue-rotate(100deg) contrast(1.05)';
-        case 'rustic-brown': return 'sepia(0.4) saturate(1.1) contrast(1.05)';
-        case 'soft-peach': return 'saturate(1.05) sepia(0.1) brightness(1.1) contrast(0.95)';
-        case 'aged-sepia': return 'sepia(0.9) contrast(1.0) brightness(0.9)';
-        case 'vintage-bw': return 'grayscale(1) contrast(1.1)';
-        case 'warm-film': return 'sepia(0.2) saturate(1.15) brightness(1.08) contrast(1.05)';
-        default: return 'none';
+        case 'cinematic-cool': return 'saturate(1.15) hue-rotate(-5deg) contrast(1.1) brightness(1.05)';
+        default: return '';
     }
 }
 

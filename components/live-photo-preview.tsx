@@ -30,7 +30,7 @@ export default function LivePhotoPreview({
     const [isPlaying, setIsPlaying] = useState(false);
     const [videoUrl, setVideoUrl] = useState<string>('');
     const [isHovering, setIsHovering] = useState(false);
-    const animationFrameRef = useRef<number>();
+    const animationFrameRef = useRef<number | undefined>(undefined);
 
     // Create URL from blob
     useEffect(() => {
