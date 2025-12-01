@@ -47,7 +47,7 @@ export default function RootLayout({
                                 About
                             </a>
                             <a
-                                href="https://instagram.com/vintiq"
+                                href="https://instagram.com/ranyyftr"
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="text-vintage-sepia hover:text-vintage-brown transition-colors"

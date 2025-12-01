@@ -86,7 +86,7 @@ export default function ResultModal({
 
                     <div className="mt-8 pt-6 border-t border-stone-100 text-center">
                         <p className="text-xs text-stone-400">
-                            Tag us <span className="font-medium text-stone-600">@vintiq.studio</span> to be featured
+                            Tag us <span className="font-medium text-stone-600">@ranyyftr</span> to be featured
                         </p>
                     </div>
                 </div>

@@ -212,7 +212,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ## 📧 Contact
 
-- Instagram: [@vintiq](https://instagram.com/vintiq)
+- Instagram: [@ranyyftr](https://instagram.com/ranyyftr)
 - Website: [vintiq.xyz](https://vintiq.xyz)
 
 ---
