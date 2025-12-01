@@ -32,24 +32,26 @@ export default function Home() {
     const allPhotosCaptured = currentSlot === -1;
 
     // Handle photo capture from camera (with live photo support)
+    // IMPORTANT: Use the same index for both photos and livePhotos to maintain order
     const handlePhotoCapture = useCallback((photo: CapturedPhoto) => {
+        let capturedIndex = -1;
+        
         setPhotos((prev) => {
             const newPhotos = [...prev];
             const emptyIndex = newPhotos.findIndex((p) => p === null);
             if (emptyIndex !== -1) {
                 newPhotos[emptyIndex] = photo.stillImage;
+                capturedIndex = emptyIndex; // Store the index for live photo
             }
             return newPhotos;
         });
 
-        // Store live photo blob if available
-        if (photo.livePhotoBlob) {
+        // Store live photo blob at the SAME index as the photo
+        if (photo.livePhotoBlob && capturedIndex !== -1) {
             setLivePhotos((prev) => {
                 const newLivePhotos = [...prev];
-                const emptyIndex = newLivePhotos.findIndex((p) => p === null);
-                if (emptyIndex !== -1) {
-                    newLivePhotos[emptyIndex] = photo.livePhotoBlob || null;
-                }
+                // Use the same index as the photo to maintain order
+                newLivePhotos[capturedIndex] = photo.livePhotoBlob || null;
                 return newLivePhotos;
             });
         }

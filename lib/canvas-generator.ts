@@ -1264,9 +1264,10 @@ export async function generateLiveStripVideo({
     background = 'classic-cream'
 }: LiveStripOptions): Promise<Blob> {
     return new Promise(async (resolve, reject) => {
-        const videoElements: HTMLVideoElement[] = [];
+        // Initialize arrays with fixed length to maintain exact order
+        const videoElements: (HTMLVideoElement | undefined)[] = new Array(4);
         const videoUrls: string[] = [];
-        const imageElements: HTMLImageElement[] = [];
+        const imageElements: (HTMLImageElement | undefined)[] = new Array(4);
 
         try {
             const canvas = document.createElement('canvas');
@@ -1428,6 +1429,8 @@ export async function generateLiveStripVideo({
                 drawBackground(ctx, STRIP_WIDTH, STRIP_HEIGHT, background);
 
                 // 2. Draw Photos/Videos
+                // IMPORTANT: Maintain exact order from input arrays (photos and livePhotos)
+                // Index i corresponds to the same position in both arrays
                 for (let i = 0; i < 4; i++) {
                     const y = PADDING_TOP + i * (PHOTO_HEIGHT + GAP);
 
@@ -1442,6 +1445,8 @@ export async function generateLiveStripVideo({
                         ctx.fillRect(PADDING_X - 10, y - 10, PHOTO_WIDTH + 20, PHOTO_HEIGHT + 20);
                     }
 
+                    // Get video and image for this exact index (maintains order)
+                    // IMPORTANT: Use exact index to preserve order from input arrays
                     const video = videoElements[i];
                     const image = imageElements[i];
 
