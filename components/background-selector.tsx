@@ -35,7 +35,15 @@ export default function BackgroundSelector({
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             {BACKGROUNDS.map((bg) => {
                 const isSelected = selectedBackground === bg.id;
-                const isDark = bg.id === 'film-noir';
+                // Dark backgrounds that need light text
+                const darkBackgrounds: BackgroundStyle[] = [
+                    'camera-roll-film',
+                    'vintage-wood',
+                    'aged-wood',
+                    'weathered-wood',
+                    'barn-wood'
+                ];
+                const isDark = darkBackgrounds.includes(bg.id);
 
                 return (
                     <button
