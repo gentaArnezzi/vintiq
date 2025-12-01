@@ -1,18 +1,26 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { Camera, RefreshCw } from 'lucide-react';
+import { Camera, RefreshCw, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
     requestCameraPermission,
     checkBrowserSupport,
     captureFrame,
     stopCameraStream,
+    LivePhotoCapture,
+    createVideoFromFrames,
     type CameraStream,
 } from '@/lib/camera-utils';
 
+export interface CapturedPhoto {
+    stillImage: string;
+    livePhotoBlob?: Blob;
+    timestamp: number;
+}
+
 interface CameraCaptureProps {
-    onPhotoCapture: (photoDataUrl: string) => void;
+    onPhotoCapture: (photo: CapturedPhoto) => void;
     capturedCount: number;
     maxPhotos?: number;
     onError: (error: string) => void;
@@ -26,10 +34,13 @@ export default function CameraCapture({
 }: CameraCaptureProps) {
     const videoRef = useRef<HTMLVideoElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
+    const livePhotoCaptureRef = useRef<LivePhotoCapture | null>(null);
     const [cameraStream, setCameraStream] = useState<CameraStream | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [countdown, setCountdown] = useState<number | null>(null);
     const [flashActive, setFlashActive] = useState(false);
+    const [livePhotoEnabled, setLivePhotoEnabled] = useState(true);
+    const [isGeneratingVideo, setIsGeneratingVideo] = useState(false);
 
     // Check browser support
     useEffect(() => {
@@ -82,6 +93,10 @@ export default function CameraCapture({
             if (cameraStream) {
                 stopCameraStream(cameraStream.stream);
             }
+            // Stop live photo capture
+            if (livePhotoCaptureRef.current) {
+                livePhotoCaptureRef.current.stop();
+            }
             // Stop video element if it exists
             if (videoRef.current) {
                 videoRef.current.pause();
@@ -90,6 +105,29 @@ export default function CameraCapture({
         };
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
+
+    // Start/stop live photo buffering when enabled/disabled
+    useEffect(() => {
+        if (!videoRef.current || !cameraStream) return;
+
+        if (livePhotoEnabled) {
+            // Initialize and start live photo capture
+            livePhotoCaptureRef.current = new LivePhotoCapture(1.5, 15);
+            livePhotoCaptureRef.current.start(videoRef.current);
+        } else {
+            // Stop and cleanup
+            if (livePhotoCaptureRef.current) {
+                livePhotoCaptureRef.current.stop();
+                livePhotoCaptureRef.current = null;
+            }
+        }
+
+        return () => {
+            if (livePhotoCaptureRef.current) {
+                livePhotoCaptureRef.current.stop();
+            }
+        };
+    }, [livePhotoEnabled, cameraStream]);
 
     // Handle photo capture with countdown
     const handleCapture = () => {
@@ -116,19 +154,47 @@ export default function CameraCapture({
         setFlashActive(true);
         setTimeout(() => setFlashActive(false), 150);
 
-        if (videoRef.current && canvasRef.current) {
+        const capturePhoto = async () => {
+            if (!videoRef.current || !canvasRef.current) return;
+
             try {
-                const dataUrl = captureFrame(videoRef.current, canvasRef.current);
-                onPhotoCapture(dataUrl);
+                // Capture still image
+                const stillImage = captureFrame(videoRef.current, canvasRef.current);
+
+                let livePhotoBlob: Blob | undefined;
+
+                // Capture live photo if enabled
+                if (livePhotoEnabled && livePhotoCaptureRef.current) {
+                    setIsGeneratingVideo(true);
+                    try {
+                        const frames = await livePhotoCaptureRef.current.captureLivePhoto();
+                        if (frames.length > 0) {
+                            livePhotoBlob = await createVideoFromFrames(frames, 15);
+                        }
+                    } catch (videoError) {
+                        console.error('Live photo generation failed:', videoError);
+                        // Continue without live photo
+                    } finally {
+                        setIsGeneratingVideo(false);
+                    }
+                }
+
+                // Send captured photo to parent
+                onPhotoCapture({
+                    stillImage,
+                    livePhotoBlob,
+                    timestamp: Date.now(),
+                });
             } catch (error) {
                 if (error instanceof Error) {
                     onError(error.message);
                 }
             }
-        }
+        };
 
+        capturePhoto();
         setCountdown(null);
-    }, [countdown, onPhotoCapture, onError]);
+    }, [countdown, onPhotoCapture, onError, livePhotoEnabled]);
 
     // Keyboard shortcut
     useEffect(() => {
@@ -196,7 +262,32 @@ export default function CameraCapture({
                 </div>
 
                 {/* Camera Branding/Details */}
-                <div className="absolute top-6 right-6 flex gap-2">
+                <div className="absolute top-6 right-6 flex items-center gap-3">
+                    {/* Live Photo Toggle */}
+                    <button
+                        onClick={() => setLivePhotoEnabled(!livePhotoEnabled)}
+                        className={`group/live flex items-center gap-2 px-3 py-1.5 rounded-full backdrop-blur-sm transition-all duration-200 ${livePhotoEnabled
+                                ? 'bg-yellow-500/90 hover:bg-yellow-600/90'
+                                : 'bg-stone-800/80 hover:bg-stone-700/80'
+                            }`}
+                        title={livePhotoEnabled ? 'Live Photo On' : 'Live Photo Off'}
+                    >
+                        <div className="relative">
+                            <Zap className={`w-3.5 h-3.5 transition-all ${livePhotoEnabled ? 'text-white fill-white' : 'text-stone-400'
+                                }`} />
+                            {livePhotoEnabled && (
+                                <div className="absolute inset-0 animate-ping">
+                                    <Zap className="w-3.5 h-3.5 text-yellow-300 fill-yellow-300 opacity-75" />
+                                </div>
+                            )}
+                        </div>
+                        <span className={`text-[10px] font-bold uppercase tracking-wider ${livePhotoEnabled ? 'text-white' : 'text-stone-400'
+                            }`}>
+                            Live
+                        </span>
+                    </button>
+
+                    {/* Recording Indicator */}
                     <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.6)]" />
                 </div>
             </div>
@@ -210,10 +301,10 @@ export default function CameraCapture({
                         <div
                             key={i}
                             className={`w-3 h-3 rounded-full transition-all duration-300 ${i < capturedCount
-                                    ? 'bg-stone-800 scale-100'
-                                    : i === capturedCount
-                                        ? 'bg-stone-300 scale-110 ring-2 ring-stone-200 ring-offset-2'
-                                        : 'bg-stone-200 scale-90'
+                                ? 'bg-stone-800 scale-100'
+                                : i === capturedCount
+                                    ? 'bg-stone-300 scale-110 ring-2 ring-stone-200 ring-offset-2'
+                                    : 'bg-stone-200 scale-90'
                                 }`}
                         />
                     ))}
@@ -253,11 +344,13 @@ export default function CameraCapture({
 
                 {/* Status Text */}
                 <div className="h-6">
-                    {capturedCount >= maxPhotos ? (
+                    {isGeneratingVideo ? (
+                        <p className="text-stone-600 text-sm font-medium animate-pulse">Generating Live Photo...</p>
+                    ) : capturedCount >= maxPhotos ? (
                         <p className="text-stone-800 font-medium animate-fade-in">Session Complete!</p>
                     ) : (
                         <p className="text-stone-400 text-sm font-light">
-                            {countdown !== null ? 'Get Ready...' : 'Ready to Capture'}
+                            {countdown !== null ? 'Get Ready...' : livePhotoEnabled ? '⚡ Live Photo Ready' : 'Ready to Capture'}
                         </p>
                     )}
                 </div>

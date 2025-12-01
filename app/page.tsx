@@ -4,7 +4,7 @@ import { useState, useCallback } from 'react';
 import { Camera, Upload, Sparkles, ArrowRight, RotateCcw, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import CameraCapture from '@/components/camera-capture';
+import CameraCapture, { type CapturedPhoto } from '@/components/camera-capture';
 import PhotoUpload from '@/components/photo-upload';
 import PhotostripPreview from '@/components/photostrip-preview';
 import FilterSelector from '@/components/filter-selector';
@@ -21,6 +21,7 @@ const MAX_PHOTOS = 4;
 export default function Home() {
     const [mode, setMode] = useState<PhotoMode>('select');
     const [photos, setPhotos] = useState<(string | null)[]>(Array(MAX_PHOTOS).fill(null));
+    const [livePhotos, setLivePhotos] = useState<(Blob | null)[]>(Array(MAX_PHOTOS).fill(null));
     const [selectedFilter, setSelectedFilter] = useState<FilterType>('vintiq-warm');
     const [selectedBackground, setSelectedBackground] = useState<BackgroundStyle>('classic-cream');
     const [isGenerating, setIsGenerating] = useState(false);
@@ -30,16 +31,28 @@ export default function Home() {
     const currentSlot = photos.findIndex((p) => p === null);
     const allPhotosCaptured = currentSlot === -1;
 
-    // Handle photo capture from camera
-    const handlePhotoCapture = useCallback((photoDataUrl: string) => {
+    // Handle photo capture from camera (with live photo support)
+    const handlePhotoCapture = useCallback((photo: CapturedPhoto) => {
         setPhotos((prev) => {
             const newPhotos = [...prev];
             const emptyIndex = newPhotos.findIndex((p) => p === null);
             if (emptyIndex !== -1) {
-                newPhotos[emptyIndex] = photoDataUrl;
+                newPhotos[emptyIndex] = photo.stillImage;
             }
             return newPhotos;
         });
+
+        // Store live photo blob if available
+        if (photo.livePhotoBlob) {
+            setLivePhotos((prev) => {
+                const newLivePhotos = [...prev];
+                const emptyIndex = newLivePhotos.findIndex((p) => p === null);
+                if (emptyIndex !== -1) {
+                    newLivePhotos[emptyIndex] = photo.livePhotoBlob || null;
+                }
+                return newLivePhotos;
+            });
+        }
     }, []);
 
     // Handle photo upload
@@ -60,6 +73,11 @@ export default function Home() {
             newPhotos[index] = null;
             return newPhotos;
         });
+        setLivePhotos((prev) => {
+            const newLivePhotos = [...prev];
+            newLivePhotos[index] = null;
+            return newLivePhotos;
+        });
     }, []);
 
     // Retake last photo (camera mode)
@@ -75,11 +93,23 @@ export default function Home() {
             }
             return newPhotos;
         });
+        setLivePhotos((prev) => {
+            const newLivePhotos = [...prev];
+            const lastFilledIndex = newLivePhotos.reduce(
+                (lastIndex, photo, index) => (photo ? index : lastIndex),
+                -1
+            );
+            if (lastFilledIndex >= 0) {
+                newLivePhotos[lastFilledIndex] = null;
+            }
+            return newLivePhotos;
+        });
     }, []);
 
     // Reset all
     const handleReset = useCallback(() => {
         setPhotos(Array(MAX_PHOTOS).fill(null));
+        setLivePhotos(Array(MAX_PHOTOS).fill(null));
         setMode('select');
         setGeneratedStrip(null);
         setError('');
@@ -273,6 +303,7 @@ export default function Home() {
                             <div className="lg:col-span-5 xl:col-span-4 space-y-8">
                                 <PhotostripPreview
                                     photos={photos}
+                                    livePhotos={livePhotos}
                                     currentSlot={currentSlot === -1 ? MAX_PHOTOS : currentSlot}
                                     onRemovePhoto={handleRemovePhoto}
                                     maxPhotos={MAX_PHOTOS}
@@ -291,6 +322,10 @@ export default function Home() {
                     stripCanvas={generatedStrip}
                     onClose={() => setGeneratedStrip(null)}
                     onStartAgain={handleReset}
+                    livePhotos={livePhotos}
+                    photos={photos}
+                    filter={selectedFilter}
+                    background={selectedBackground}
                 />
             )}
         </div>

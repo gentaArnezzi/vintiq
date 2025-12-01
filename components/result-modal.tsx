@@ -1,22 +1,33 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
-import { downloadCanvas } from '@/lib/canvas-generator';
+import { useEffect, useRef, useState } from 'react';
+import { downloadCanvas, downloadVideo, generateLiveStripVideo } from '@/lib/canvas-generator';
 import { Button } from '@/components/ui/button';
-import { Download, RotateCcw, X } from 'lucide-react';
+import { Download, RotateCcw, X, Video } from 'lucide-react';
+import type { FilterType } from '@/lib/image-filters';
+import type { BackgroundStyle } from '@/lib/canvas-generator';
 
 interface ResultModalProps {
     stripCanvas: HTMLCanvasElement | null;
     onClose: () => void;
     onStartAgain: () => void;
+    livePhotos?: (Blob | null)[];
+    photos?: (string | null)[];
+    filter?: FilterType;
+    background?: BackgroundStyle;
 }
 
 export default function ResultModal({
     stripCanvas,
     onClose,
     onStartAgain,
+    livePhotos = [],
+    photos = [],
+    filter = 'vintiq-warm',
+    background = 'classic-cream',
 }: ResultModalProps) {
     const displayCanvasRef = useRef<HTMLCanvasElement>(null);
+    const [isGeneratingVideo, setIsGeneratingVideo] = useState(false);
 
     useEffect(() => {
         if (stripCanvas && displayCanvasRef.current) {
@@ -32,6 +43,33 @@ export default function ResultModal({
     const handleDownload = () => {
         if (stripCanvas) {
             downloadCanvas(stripCanvas);
+        }
+    };
+
+    const hasLivePhotos = livePhotos.some(blob => blob !== null);
+
+    const handleDownloadLiveStrip = async () => {
+        // Check if we have any live photos
+        if (!hasLivePhotos) {
+            alert('Tidak ada live photo yang tersedia. Silakan gunakan kamera untuk mengambil live photo.');
+            return;
+        }
+
+        setIsGeneratingVideo(true);
+        try {
+            const videoBlob = await generateLiveStripVideo({
+                photos,
+                livePhotos,
+                filter,
+                layout: 'vertical-4',
+                background,
+            });
+            downloadVideo(videoBlob);
+        } catch (error) {
+            console.error('Error generating live strip:', error);
+            alert('Gagal menghasilkan live strip video. Silakan coba lagi.');
+        } finally {
+            setIsGeneratingVideo(false);
         }
     };
 
@@ -74,6 +112,25 @@ export default function ResultModal({
                         >
                             <Download className="w-4 h-4 mr-2" /> Download Image
                         </Button>
+
+                        {hasLivePhotos && (
+                            <Button
+                                onClick={handleDownloadLiveStrip}
+                                disabled={isGeneratingVideo}
+                                variant="outline"
+                                className="w-full h-12 text-base border-stone-300 hover:bg-stone-50"
+                            >
+                                {isGeneratingVideo ? (
+                                    <>
+                                        <RotateCcw className="w-4 h-4 mr-2 animate-spin" /> Generating...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Video className="w-4 h-4 mr-2" /> Download Live Strip (Video)
+                                    </>
+                                )}
+                            </Button>
+                        )}
 
                         <Button
                             variant="outline"

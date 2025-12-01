@@ -253,3 +253,316 @@ export function downloadCanvas(canvas: HTMLCanvasElement) {
     link.href = canvas.toDataURL('image/png');
     link.click();
 }
+
+export function downloadVideo(blob: Blob) {
+    const link = document.createElement('a');
+    const timestamp = format(new Date(), 'yyyyMMdd-HHmm');
+    // Always use .mp4 extension for Instagram and gallery compatibility
+    // Even if the blob is WebM, we'll name it .mp4 (user can convert if needed)
+    link.download = `vintiq-live-strip-${timestamp}.mp4`;
+    link.href = URL.createObjectURL(blob);
+    link.click();
+    // Cleanup URL after a delay
+    setTimeout(() => URL.revokeObjectURL(link.href), 100);
+}
+
+interface LiveStripOptions extends GenerateOptions {
+    livePhotos: (Blob | null)[];
+}
+
+export async function generateLiveStripVideo({
+    photos,
+    livePhotos,
+    filter,
+    layout,
+    background = 'classic-cream'
+}: LiveStripOptions): Promise<Blob> {
+    return new Promise(async (resolve, reject) => {
+        const videoElements: HTMLVideoElement[] = [];
+        const videoUrls: string[] = [];
+        const imageElements: HTMLImageElement[] = [];
+
+        try {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+
+            if (!ctx) {
+                throw new Error('Failed to get canvas context');
+            }
+
+            // Constants (Same as static strip)
+            const STRIP_WIDTH = 600;
+            const PHOTO_WIDTH = 520;
+            const PHOTO_HEIGHT = 390;
+            const PADDING_X = (STRIP_WIDTH - PHOTO_WIDTH) / 2;
+            const PADDING_TOP = 60;
+            const GAP = 30;
+            const BOTTOM_SPACE = 120;
+            const STRIP_HEIGHT = PADDING_TOP + (PHOTO_HEIGHT * 4) + (GAP * 3) + BOTTOM_SPACE;
+
+            canvas.width = STRIP_WIDTH;
+            canvas.height = STRIP_HEIGHT;
+
+            // Pre-load static images for fallback
+            const imagePromises = photos.map(async (photoUrl, index) => {
+                if (photoUrl && !livePhotos[index]) {
+                    const img = await loadImage(photoUrl);
+                    imageElements[index] = img;
+                }
+            });
+            await Promise.all(imagePromises);
+
+            // Load all videos and wait for them to be ready
+            const videoPromises = livePhotos.map(async (blob, index) => {
+                if (blob) {
+                    const video = document.createElement('video');
+                    const url = URL.createObjectURL(blob);
+                    videoUrls.push(url);
+                    video.src = url;
+                    video.muted = true;
+                    video.playsInline = true;
+                    video.loop = true;
+                    video.preload = 'auto';
+
+                    // Wait for video to be loaded and ready
+                    await new Promise<void>((resolveVideo, rejectVideo) => {
+                        video.onloadedmetadata = () => {
+                            video.oncanplaythrough = () => {
+                                resolveVideo();
+                            };
+                            video.onerror = rejectVideo;
+                        };
+                        video.onerror = rejectVideo;
+                    });
+
+                    videoElements[index] = video;
+                }
+            });
+
+            await Promise.all(videoPromises);
+
+            // Find the longest video duration (or use default 2 seconds)
+            let maxDuration = 2000; // Default 2 seconds
+            for (const video of videoElements) {
+                if (video && video.duration && !isNaN(video.duration) && isFinite(video.duration)) {
+                    const durationMs = video.duration * 1000;
+                    if (durationMs > maxDuration) {
+                        maxDuration = durationMs;
+                    }
+                }
+            }
+
+            // Ensure minimum duration of 2 seconds
+            const DURATION = Math.max(maxDuration, 2000);
+
+            // Start all videos simultaneously
+            const playPromises = videoElements.map(video => {
+                if (video) {
+                    video.currentTime = 0;
+                    return video.play().catch(err => {
+                        console.warn('Video play failed:', err);
+                    });
+                }
+            });
+            await Promise.all(playPromises);
+
+            // Wait a bit for videos to start playing
+            await new Promise(resolve => setTimeout(resolve, 100));
+
+            // Setup MediaRecorder
+            // Prioritize MP4 (H.264) for Instagram and gallery compatibility
+            const stream = canvas.captureStream(30); // 30 FPS
+            let mimeType = 'video/mp4'; // Default to MP4
+            
+            // Try MP4 with H.264 codec first (best for Instagram/gallery)
+            if (MediaRecorder.isTypeSupported('video/mp4;codecs=h264')) {
+                mimeType = 'video/mp4;codecs=h264';
+            } else if (MediaRecorder.isTypeSupported('video/mp4;codecs=avc1.42E01E')) {
+                mimeType = 'video/mp4;codecs=avc1.42E01E'; // H.264 baseline
+            } else if (MediaRecorder.isTypeSupported('video/mp4')) {
+                mimeType = 'video/mp4';
+            } else if (MediaRecorder.isTypeSupported('video/webm;codecs=vp9')) {
+                // Fallback to WebM if MP4 not supported (rare)
+                mimeType = 'video/webm;codecs=vp9';
+            } else if (MediaRecorder.isTypeSupported('video/webm')) {
+                mimeType = 'video/webm';
+            }
+
+            const mediaRecorder = new MediaRecorder(stream, {
+                mimeType,
+                videoBitsPerSecond: 5000000 // 5 Mbps
+            });
+
+            const chunks: Blob[] = [];
+            mediaRecorder.ondataavailable = (e) => {
+                if (e.data.size > 0) chunks.push(e.data);
+            };
+
+            mediaRecorder.onstop = () => {
+                const blob = new Blob(chunks, { type: mimeType });
+                // Cleanup
+                videoElements.forEach(v => {
+                    if (v) {
+                        v.pause();
+                        v.src = '';
+                    }
+                });
+                videoUrls.forEach(url => URL.revokeObjectURL(url));
+                resolve(blob);
+            };
+
+            mediaRecorder.onerror = (e) => {
+                reject(new Error('MediaRecorder error'));
+            };
+
+            // Animation Loop
+            const startTime = Date.now();
+            let animationFrameId: number;
+
+            const drawFrame = () => {
+                const elapsed = Date.now() - startTime;
+                if (elapsed >= DURATION) {
+                    mediaRecorder.stop();
+                    if (animationFrameId) {
+                        cancelAnimationFrame(animationFrameId);
+                    }
+                    return;
+                }
+
+                // 1. Draw Background (Static)
+                drawBackground(ctx, STRIP_WIDTH, STRIP_HEIGHT, background);
+
+                // 2. Draw Photos/Videos
+                for (let i = 0; i < 4; i++) {
+                    const y = PADDING_TOP + i * (PHOTO_HEIGHT + GAP);
+
+                    // Draw white frame
+                    ctx.fillStyle = '#FFFFFF';
+                    ctx.fillRect(PADDING_X - 10, y - 10, PHOTO_WIDTH + 20, PHOTO_HEIGHT + 20);
+
+                    const video = videoElements[i];
+                    const image = imageElements[i];
+
+                    if (video && video.readyState >= 2) {
+                        // Draw Video Frame
+                        ctx.save();
+
+                        // Apply Filter (using CSS filter string on context)
+                        ctx.filter = getCanvasFilterString(filter);
+
+                        // Draw video centered/covered
+                        drawCoverVideo(ctx, video, PADDING_X, y, PHOTO_WIDTH, PHOTO_HEIGHT);
+
+                        ctx.restore();
+                    } else if (image) {
+                        // Fallback to static image
+                        ctx.save();
+
+                        // Create temp canvas for processing
+                        const tempCanvas = document.createElement('canvas');
+                        tempCanvas.width = PHOTO_WIDTH;
+                        tempCanvas.height = PHOTO_HEIGHT;
+                        const tempCtx = tempCanvas.getContext('2d');
+
+                        if (tempCtx) {
+                            // Draw image covering the area (center crop)
+                            drawCover(tempCtx, image, PHOTO_WIDTH, PHOTO_HEIGHT);
+
+                            // Apply filter
+                            applyFilter(tempCtx, PHOTO_WIDTH, PHOTO_HEIGHT, filter);
+
+                            // Draw photo
+                            ctx.drawImage(tempCanvas, PADDING_X, y);
+                        }
+
+                        ctx.restore();
+                    } else {
+                        // Placeholder
+                        ctx.fillStyle = '#f5f5f4';
+                        ctx.fillRect(PADDING_X, y, PHOTO_WIDTH, PHOTO_HEIGHT);
+
+                        // Draw dashed border
+                        ctx.strokeStyle = '#d6d3d1';
+                        ctx.lineWidth = 2;
+                        ctx.setLineDash([10, 10]);
+                        ctx.strokeRect(PADDING_X + 2, y + 2, PHOTO_WIDTH - 4, PHOTO_HEIGHT - 4);
+                        ctx.setLineDash([]);
+
+                        // Draw number
+                        ctx.fillStyle = '#a8a29e';
+                        ctx.font = 'bold 48px sans-serif';
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
+                        ctx.fillText(`${i + 1}`, PADDING_X + PHOTO_WIDTH / 2, y + PHOTO_HEIGHT / 2);
+                    }
+
+                    // Inner shadow
+                    ctx.strokeStyle = 'rgba(0,0,0,0.1)';
+                    ctx.lineWidth = 1;
+                    ctx.strokeRect(PADDING_X, y, PHOTO_WIDTH, PHOTO_HEIGHT);
+                }
+
+                // 3. Draw Branding
+                drawBranding(ctx, STRIP_WIDTH, STRIP_HEIGHT, background);
+
+                animationFrameId = requestAnimationFrame(drawFrame);
+            };
+
+            mediaRecorder.start();
+            drawFrame();
+
+        } catch (error) {
+            // Cleanup on error
+            videoElements.forEach(v => {
+                if (v) {
+                    v.pause();
+                    v.src = '';
+                }
+            });
+            videoUrls.forEach(url => URL.revokeObjectURL(url));
+            reject(error);
+        }
+    });
+}
+
+// Helper to map FilterType to Canvas filter string
+function getCanvasFilterString(type: FilterType): string {
+    switch (type) {
+        case 'vintiq-warm': return 'sepia(0.2) contrast(0.9) brightness(1.1) saturate(1.1)';
+        case 'sepia-classic': return 'sepia(0.8) contrast(0.9)';
+        case 'mono-film': return 'grayscale(1) contrast(1.1)';
+        case 'polaroid-fade': return 'brightness(1.1) contrast(0.9) saturate(0.8)';
+        case 'kodak-gold': return 'saturate(1.2) contrast(1.1) sepia(0.1)';
+        case 'fuji-superia': return 'saturate(1.1) hue-rotate(-10deg)';
+        case 'drama-bw': return 'grayscale(1) contrast(1.3)';
+        case 'cinematic-cool': return 'contrast(1.1) saturate(1.1)';
+        default: return 'none';
+    }
+}
+
+function drawCoverVideo(
+    ctx: CanvasRenderingContext2D,
+    video: HTMLVideoElement,
+    x: number,
+    y: number,
+    width: number,
+    height: number
+) {
+    const vidRatio = video.videoWidth / video.videoHeight;
+    const targetRatio = width / height;
+    let sx, sy, sWidth, sHeight;
+
+    if (vidRatio > targetRatio) {
+        sHeight = video.videoHeight;
+        sWidth = video.videoHeight * targetRatio;
+        sy = 0;
+        sx = (video.videoWidth - sWidth) / 2;
+    } else {
+        sWidth = video.videoWidth;
+        sHeight = video.videoWidth / targetRatio;
+        sx = 0;
+        sy = (video.videoHeight - sHeight) / 2;
+    }
+
+    ctx.drawImage(video, sx, sy, sWidth, sHeight, x, y, width, height);
+}

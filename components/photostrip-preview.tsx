@@ -4,9 +4,11 @@ import { useEffect, useRef, useState } from 'react';
 import { X, RotateCcw } from 'lucide-react';
 import { generatePhotostrip, type BackgroundStyle } from '@/lib/canvas-generator';
 import type { FilterType } from '@/lib/image-filters';
+import LivePhotoPreview from './live-photo-preview';
 
 interface PhotostripPreviewProps {
     photos: (string | null)[];
+    livePhotos?: (Blob | null)[];
     currentSlot: number;
     onRemovePhoto?: (index: number) => void;
     maxPhotos?: number;
@@ -16,6 +18,7 @@ interface PhotostripPreviewProps {
 
 export default function PhotostripPreview({
     photos,
+    livePhotos = [],
     currentSlot,
     onRemovePhoto,
     maxPhotos = 4,
@@ -70,6 +73,21 @@ export default function PhotostripPreview({
         { top: '72.0%', height: '21.3%' },
     ];
 
+    // Map filter type to CSS filter string for video preview
+    const getFilterStyle = (type: FilterType): string => {
+        switch (type) {
+            case 'vintiq-warm': return 'sepia(0.2) contrast(0.9) brightness(1.1) saturate(1.1)';
+            case 'sepia-classic': return 'sepia(0.8) contrast(0.9)';
+            case 'mono-film': return 'grayscale(1) contrast(1.1)';
+            case 'polaroid-fade': return 'brightness(1.1) contrast(0.9) saturate(0.8)';
+            case 'kodak-gold': return 'saturate(1.2) contrast(1.1) sepia(0.1)';
+            case 'fuji-superia': return 'saturate(1.1) hue-rotate(-10deg)';
+            case 'drama-bw': return 'grayscale(1) contrast(1.3)';
+            case 'cinematic-cool': return 'contrast(1.1) saturate(1.1)';
+            default: return '';
+        }
+    };
+
     return (
         <div className="bg-white p-6 rounded-xl border border-stone-200 shadow-sm sticky top-24">
             <div className="flex items-center justify-between mb-6">
@@ -97,13 +115,29 @@ export default function PhotostripPreview({
                                     const hasPhoto = !!photos[index];
                                     if (!hasPhoto) return null;
 
+                                    const livePhoto = livePhotos[index];
+
                                     return (
                                         <div
                                             key={index}
                                             style={{ top: pos.top, height: pos.height }}
                                             className="absolute left-[6.6%] right-[6.6%] group cursor-pointer"
                                         >
-                                            <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            {/* Live Photo Overlay */}
+                                            {livePhoto && (
+                                                <div className="absolute inset-0 z-10">
+                                                    <LivePhotoPreview
+                                                        videoBlob={livePhoto}
+                                                        stillImage={photos[index]!}
+                                                        variant="compact"
+                                                        filterStyle={getFilterStyle(filter)}
+                                                        className="w-full h-full"
+                                                    />
+                                                </div>
+                                            )}
+
+                                            {/* Remove Button (Higher Z-Index) */}
+                                            <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-20">
                                                 <button
                                                     onClick={(e) => {
                                                         e.stopPropagation();
@@ -115,7 +149,11 @@ export default function PhotostripPreview({
                                                     <X className="w-3 h-3" />
                                                 </button>
                                             </div>
-                                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors rounded-sm pointer-events-none" />
+
+                                            {/* Hover highlight if no live photo */}
+                                            {!livePhoto && (
+                                                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors rounded-sm pointer-events-none" />
+                                            )}
                                         </div>
                                     );
                                 })}
