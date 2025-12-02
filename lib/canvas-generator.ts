@@ -114,6 +114,11 @@ export async function generatePhotostrip({
                 // Draw photo
                 ctx.drawImage(tempCanvas, PADDING_X, y);
             }
+            
+            // Add vintage photo corners with tape (only for non-film backgrounds)
+            if (background !== 'camera-roll-film' && Math.random() > 0.4) {
+                drawPhotoCorners(ctx, PADDING_X, y, PHOTO_WIDTH, PHOTO_HEIGHT);
+            }
         } else {
             // Draw Placeholder
             ctx.fillStyle = '#f5f5f4'; // stone-100
@@ -317,6 +322,11 @@ async function generatePolaroidLayout(
             applyFilter(tempCtx, PHOTO_WIDTH, PHOTO_HEIGHT, filter);
             ctx.drawImage(tempCanvas, PADDING_X, y);
         }
+        
+        // Add vintage photo corners with tape
+        if (background !== 'camera-roll-film' && Math.random() > 0.4) {
+            drawPhotoCorners(ctx, PADDING_X, y, PHOTO_WIDTH, PHOTO_HEIGHT);
+        }
     } else {
         // Placeholder
         ctx.fillStyle = '#f5f5f4';
@@ -371,6 +381,9 @@ function drawBackground(
             ctx.fillRect(0, 0, width, height);
             // Add noise/grain
             addNoise(ctx, width, height, 0.05);
+            // Add decorative vintage elements
+            drawDecorativeTapes(ctx, width, height);
+            drawTornPaperPieces(ctx, width, height);
             break;
         case 'retro-grid':
             ctx.fillStyle = '#fdfbf7';
@@ -391,6 +404,9 @@ function drawBackground(
                 ctx.lineTo(width, y);
                 ctx.stroke();
             }
+            // Add subtle decorative elements
+            addNoise(ctx, width, height, 0.03);
+            drawDecorativeTapes(ctx, width, height);
             break;
         case 'torn-paper':
             // Base cream color with noise
@@ -489,8 +505,209 @@ function drawBackground(
             gradient.addColorStop(1, '#FFE4B5');
             ctx.fillStyle = gradient;
             ctx.fillRect(0, 0, width, height);
+            // Add subtle noise for texture
+            addNoise(ctx, width, height, 0.04);
+            // Add decorative vintage elements
+            drawDecorativeTapes(ctx, width, height);
+            drawTornPaperPieces(ctx, width, height);
             break;
     }
+}
+
+// Draw decorative tape strips at various positions (for vintage look)
+function drawDecorativeTapes(ctx: CanvasRenderingContext2D, width: number, height: number) {
+    ctx.save();
+
+    const tapeColor = 'rgba(255, 248, 220, 0.65)'; // Semi-transparent beige tape
+    const tapeShadow = 'rgba(200, 180, 150, 0.25)';
+
+    // Random positions for 2-4 tape strips
+    const tapeCount = 2 + Math.floor(Math.random() * 3);
+    
+    for (let i = 0; i < tapeCount; i++) {
+        const angle = (Math.random() - 0.5) * Math.PI * 0.3; // Slight rotation
+        const tapeLength = 60 + Math.random() * 80;
+        const tapeWidth = 18 + Math.random() * 6;
+        
+        // Position tapes near edges or corners, but not exactly on them
+        let x, y;
+        const edge = Math.random();
+        if (edge < 0.25) {
+            // Top edge
+            x = 30 + Math.random() * (width - 60);
+            y = 20 + Math.random() * 40;
+        } else if (edge < 0.5) {
+            // Right edge
+            x = width - 50 - Math.random() * 40;
+            y = 30 + Math.random() * (height - 60);
+        } else if (edge < 0.75) {
+            // Bottom edge
+            x = 30 + Math.random() * (width - 60);
+            y = height - 50 - Math.random() * 40;
+        } else {
+            // Left edge
+            x = 20 + Math.random() * 40;
+            y = 30 + Math.random() * (height - 60);
+        }
+
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(angle);
+
+        // Draw tape shadow
+        ctx.fillStyle = tapeShadow;
+        ctx.fillRect(-tapeLength / 2 + 1, -tapeWidth / 2 + 1, tapeLength, tapeWidth);
+
+        // Draw main tape
+        ctx.fillStyle = tapeColor;
+        ctx.fillRect(-tapeLength / 2, -tapeWidth / 2, tapeLength, tapeWidth);
+
+        // Add tape texture lines
+        ctx.strokeStyle = 'rgba(200, 180, 150, 0.4)';
+        ctx.lineWidth = 1;
+        for (let j = 0; j < 3; j++) {
+            ctx.beginPath();
+            ctx.moveTo(-tapeLength / 2, -tapeWidth / 2 + (tapeWidth / 3) * (j + 1));
+            ctx.lineTo(tapeLength / 2, -tapeWidth / 2 + (tapeWidth / 3) * (j + 1));
+            ctx.stroke();
+        }
+
+        // Add tape shine/highlight
+        const shineGradient = ctx.createLinearGradient(-tapeLength / 2, -tapeWidth / 2, -tapeLength / 2, tapeWidth / 2);
+        shineGradient.addColorStop(0, 'rgba(255, 255, 255, 0.3)');
+        shineGradient.addColorStop(1, 'transparent');
+        ctx.fillStyle = shineGradient;
+        ctx.fillRect(-tapeLength / 2, -tapeWidth / 2, tapeWidth * 0.4, tapeWidth);
+
+        ctx.restore();
+    }
+
+    ctx.restore();
+}
+
+// Draw torn paper pieces scattered around (subtle vintage detail)
+function drawTornPaperPieces(ctx: CanvasRenderingContext2D, width: number, height: number) {
+    ctx.save();
+
+    const pieceCount = 3 + Math.floor(Math.random() * 3);
+    const paperColor = 'rgba(250, 245, 235, 0.6)';
+    const paperShadow = 'rgba(0, 0, 0, 0.08)';
+
+    for (let i = 0; i < pieceCount; i++) {
+        const size = 25 + Math.random() * 40;
+        const angle = Math.random() * Math.PI * 2;
+        
+        // Position pieces near corners or edges
+        let x, y;
+        const corner = Math.random();
+        if (corner < 0.25) {
+            // Top-left area
+            x = 15 + Math.random() * 80;
+            y = 15 + Math.random() * 80;
+        } else if (corner < 0.5) {
+            // Top-right area
+            x = width - 95 - Math.random() * 80;
+            y = 15 + Math.random() * 80;
+        } else if (corner < 0.75) {
+            // Bottom-left area
+            x = 15 + Math.random() * 80;
+            y = height - 95 - Math.random() * 80;
+        } else {
+            // Bottom-right area
+            x = width - 95 - Math.random() * 80;
+            y = height - 95 - Math.random() * 80;
+        }
+
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(angle);
+
+        // Draw shadow
+        ctx.fillStyle = paperShadow;
+        ctx.beginPath();
+        drawIrregularShape(ctx, size, 1.5, 1.5);
+        ctx.fill();
+
+        // Draw torn paper piece
+        ctx.fillStyle = paperColor;
+        ctx.beginPath();
+        drawIrregularShape(ctx, size, 0, 0);
+        ctx.fill();
+
+        // Add torn edge texture
+        ctx.strokeStyle = 'rgba(200, 180, 160, 0.3)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        drawIrregularShape(ctx, size, 0, 0);
+        ctx.stroke();
+
+        ctx.restore();
+    }
+
+    ctx.restore();
+}
+
+// Helper to draw irregular/torn shape
+function drawIrregularShape(ctx: CanvasRenderingContext2D, size: number, offsetX: number, offsetY: number) {
+    const sides = 6 + Math.floor(Math.random() * 4);
+    ctx.moveTo(offsetX, offsetY - size / 2);
+    
+    for (let i = 0; i < sides; i++) {
+        const angle = (i / sides) * Math.PI * 2;
+        const radius = (size / 2) * (0.7 + Math.random() * 0.3);
+        const x = offsetX + Math.cos(angle) * radius;
+        const y = offsetY + Math.sin(angle) * radius;
+        if (i === 0) {
+            ctx.moveTo(x, y);
+        } else {
+            ctx.lineTo(x, y);
+        }
+    }
+    ctx.closePath();
+}
+
+// Draw photo corners with tape (vintage photo album style)
+function drawPhotoCorners(ctx: CanvasRenderingContext2D, photoX: number, photoY: number, photoWidth: number, photoHeight: number) {
+    ctx.save();
+
+    const cornerSize = 25 + Math.random() * 10;
+    const tapeColor = 'rgba(255, 248, 220, 0.7)';
+    const cornerTapeWidth = 12;
+
+    // Top-left corner
+    if (Math.random() > 0.3) {
+        ctx.fillStyle = tapeColor;
+        ctx.beginPath();
+        ctx.moveTo(photoX - cornerTapeWidth, photoY - cornerTapeWidth);
+        ctx.lineTo(photoX + cornerSize, photoY - cornerTapeWidth);
+        ctx.lineTo(photoX + cornerSize, photoY);
+        ctx.lineTo(photoX, photoY + cornerSize);
+        ctx.lineTo(photoX - cornerTapeWidth, photoY + cornerSize);
+        ctx.closePath();
+        ctx.fill();
+        
+        // Add tape texture
+        ctx.strokeStyle = 'rgba(200, 180, 150, 0.3)';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+    }
+
+    // Top-right corner
+    if (Math.random() > 0.3) {
+        ctx.fillStyle = tapeColor;
+        ctx.beginPath();
+        ctx.moveTo(photoX + photoWidth + cornerTapeWidth, photoY - cornerTapeWidth);
+        ctx.lineTo(photoX + photoWidth - cornerSize, photoY - cornerTapeWidth);
+        ctx.lineTo(photoX + photoWidth - cornerSize, photoY);
+        ctx.lineTo(photoX + photoWidth, photoY + cornerSize);
+        ctx.lineTo(photoX + photoWidth + cornerTapeWidth, photoY + cornerSize);
+        ctx.closePath();
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(200, 180, 150, 0.3)';
+        ctx.stroke();
+    }
+
+    ctx.restore();
 }
 
 function drawBranding(
@@ -1917,6 +2134,11 @@ export async function generateLiveStripVideo({
                         }
 
                         ctx.restore();
+                        
+                        // Add vintage photo corners with tape
+                        if (background !== 'camera-roll-film' && Math.random() > 0.4) {
+                            drawPhotoCorners(ctx, x, y, PHOTO_WIDTH, PHOTO_HEIGHT);
+                        }
                     } else if (image) {
                         // Static photo: use static image (not animated)
                         ctx.save();
@@ -1939,6 +2161,11 @@ export async function generateLiveStripVideo({
                         }
 
                         ctx.restore();
+                        
+                        // Add vintage photo corners with tape
+                        if (background !== 'camera-roll-film' && Math.random() > 0.4) {
+                            drawPhotoCorners(ctx, x, y, PHOTO_WIDTH, PHOTO_HEIGHT);
+                        }
                     } else {
                         // Placeholder
                         ctx.fillStyle = '#f5f5f4';
