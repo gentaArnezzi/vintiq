@@ -17,7 +17,9 @@ export type BackgroundStyle =
     | 'camera-roll-film'
     | 'aged-wood'
     | 'weathered-wood'
-    | 'barn-wood';
+    | 'barn-wood'
+    | 'vintage-brown'
+    | 'vintage-brown-textured';
 
 interface GenerateOptions {
     photos: (string | null)[];
@@ -497,6 +499,24 @@ function drawBackground(
             // Draw barn wood texture
             drawBarnWood(ctx, width, height);
             break;
+        case 'vintage-brown':
+            // Vintage brown background with color #a0462d
+            ctx.fillStyle = '#a0462d';
+            ctx.fillRect(0, 0, width, height);
+            // Add vintage texture and noise
+            addNoise(ctx, width, height, 0.08);
+            // Add subtle vintage effects
+            drawVintageBrownTexture(ctx, width, height);
+            break;
+        case 'vintage-brown-textured':
+            // Vintage brown background with color #a0462d and heavy texture
+            ctx.fillStyle = '#a0462d';
+            ctx.fillRect(0, 0, width, height);
+            // Add heavy noise for texture - INCREASED for more visibility
+            addNoise(ctx, width, height, 0.18);
+            // Add heavy vintage texture effects
+            drawVintageBrownTextured(ctx, width, height);
+            break;
         case 'classic-cream':
         default:
             // Vintage gradient
@@ -725,7 +745,9 @@ function drawBranding(
         'vintage-wood',
         'aged-wood',
         'weathered-wood',
-        'barn-wood'
+        'barn-wood',
+        'vintage-brown',
+        'vintage-brown-textured'
     ];
 
     const isDark = darkBackgrounds.includes(background);
@@ -2267,4 +2289,226 @@ function drawCoverVideo(
     }
 
     ctx.drawImage(video, sx, sy, sWidth, sHeight, x, y, width, height);
+}
+
+// Draw vintage brown texture with aging effects
+function drawVintageBrownTexture(ctx: CanvasRenderingContext2D, width: number, height: number) {
+    ctx.save();
+
+    // Add subtle texture with lighter and darker variations
+    const lightBrown = 'rgba(180, 90, 60, 0.15)';
+    const darkBrown = 'rgba(70, 30, 20, 0.2)';
+    const mediumBrown = 'rgba(130, 60, 40, 0.12)';
+
+    // Draw subtle horizontal texture lines
+    const textureSpacing = 4 + Math.random() * 3;
+    for (let y = 0; y < height; y += textureSpacing) {
+        const variation = (Math.random() - 0.5) * 2;
+        const textureY = y + variation;
+
+        ctx.beginPath();
+        ctx.moveTo(0, textureY);
+
+        for (let x = 0; x < width; x += 5) {
+            const wave = Math.sin(x / 40) * 0.5 + Math.sin(x / 20) * 0.3;
+            ctx.lineTo(x, textureY + wave);
+        }
+
+        ctx.strokeStyle = Math.random() > 0.5 ? lightBrown : mediumBrown;
+        ctx.lineWidth = 0.5;
+        ctx.stroke();
+    }
+
+    // Add some vintage stains/spots
+    for (let i = 0; i < 8; i++) {
+        const x = Math.random() * width;
+        const y = Math.random() * height;
+        const radius = 20 + Math.random() * 40;
+        
+        const gradient = ctx.createRadialGradient(x, y, 0, x, y, radius);
+        gradient.addColorStop(0, darkBrown);
+        gradient.addColorStop(1, 'transparent');
+        
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(x, y, radius, 0, Math.PI * 2);
+        ctx.fill();
+    }
+
+    // Add subtle vertical grain
+    for (let i = 0; i < 15; i++) {
+        const x = Math.random() * width;
+        ctx.strokeStyle = darkBrown;
+        ctx.lineWidth = 0.3;
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x + (Math.random() - 0.5) * 2, height);
+        ctx.stroke();
+    }
+
+    ctx.restore();
+}
+
+// Draw vintage brown with heavy texture effects
+function drawVintageBrownTextured(ctx: CanvasRenderingContext2D, width: number, height: number) {
+    ctx.save();
+
+    // Much more pronounced texture colors with higher opacity
+    const lightBrown = 'rgba(220, 130, 100, 0.5)';
+    const darkBrown = 'rgba(50, 15, 10, 0.55)';
+    const mediumBrown = 'rgba(170, 80, 60, 0.45)';
+    const accentBrown = 'rgba(140, 60, 40, 0.48)';
+    const highlightBrown = 'rgba(240, 150, 120, 0.35)';
+    const shadowBrown = 'rgba(30, 10, 5, 0.6)';
+
+    // Draw heavy horizontal texture lines with more variation - MORE VISIBLE
+    const textureSpacing = 1.5 + Math.random() * 1.5;
+    for (let y = 0; y < height; y += textureSpacing) {
+        const variation = (Math.random() - 0.5) * 4;
+        const textureY = y + variation;
+
+        ctx.beginPath();
+        ctx.moveTo(0, textureY);
+
+        for (let x = 0; x < width; x += 2) {
+            const wave = Math.sin(x / 25) * 1.2 + Math.sin(x / 12) * 0.7 + Math.sin(x / 6) * 0.4;
+            ctx.lineTo(x, textureY + wave);
+        }
+
+        // Vary the color for more texture depth - MORE CONTRAST
+        const colorChoice = Math.random();
+        if (colorChoice < 0.25) {
+            ctx.strokeStyle = highlightBrown;
+        } else if (colorChoice < 0.5) {
+            ctx.strokeStyle = lightBrown;
+        } else if (colorChoice < 0.75) {
+            ctx.strokeStyle = mediumBrown;
+        } else {
+            ctx.strokeStyle = accentBrown;
+        }
+        ctx.lineWidth = 1.2 + Math.random() * 0.6;
+        ctx.stroke();
+        
+        // Add shadow line below for depth
+        if (Math.random() > 0.7) {
+            ctx.strokeStyle = shadowBrown;
+            ctx.lineWidth = 0.5;
+            ctx.beginPath();
+            ctx.moveTo(0, textureY + 1);
+            for (let x = 0; x < width; x += 2) {
+                const wave = Math.sin(x / 25) * 1.2 + Math.sin(x / 12) * 0.7 + Math.sin(x / 6) * 0.4;
+                ctx.lineTo(x, textureY + 1 + wave);
+            }
+            ctx.stroke();
+        }
+    }
+
+    // Add more vintage stains/spots with varying sizes - MORE VISIBLE
+    for (let i = 0; i < 20; i++) {
+        const x = Math.random() * width;
+        const y = Math.random() * height;
+        const radius = 20 + Math.random() * 80;
+        
+        const gradient = ctx.createRadialGradient(x, y, 0, x, y, radius);
+        if (Math.random() > 0.5) {
+            gradient.addColorStop(0, shadowBrown);
+            gradient.addColorStop(0.3, darkBrown);
+            gradient.addColorStop(0.6, 'rgba(80, 30, 20, 0.3)');
+        } else {
+            gradient.addColorStop(0, 'rgba(40, 15, 10, 0.4)');
+            gradient.addColorStop(0.4, mediumBrown);
+            gradient.addColorStop(0.7, 'rgba(120, 50, 35, 0.25)');
+        }
+        gradient.addColorStop(1, 'transparent');
+        
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(x, y, radius, 0, Math.PI * 2);
+        ctx.fill();
+    }
+
+    // Add heavy vertical grain lines - MORE VISIBLE
+    for (let i = 0; i < 35; i++) {
+        const x = Math.random() * width;
+        const startY = Math.random() * height * 0.1;
+        const endY = height - Math.random() * height * 0.1;
+        
+        // Vary between dark and light for more contrast
+        if (Math.random() > 0.5) {
+            ctx.strokeStyle = shadowBrown;
+        } else {
+            ctx.strokeStyle = highlightBrown;
+        }
+        ctx.lineWidth = 0.8 + Math.random() * 0.5;
+        ctx.beginPath();
+        ctx.moveTo(x, startY);
+        ctx.lineTo(x + (Math.random() - 0.5) * 4, endY);
+        ctx.stroke();
+    }
+
+    // Add cross-hatch texture for more depth - MORE VISIBLE
+    for (let i = 0; i < 50; i++) {
+        const x1 = Math.random() * width;
+        const y1 = Math.random() * height;
+        const x2 = x1 + (Math.random() - 0.5) * 50;
+        const y2 = y1 + (Math.random() - 0.5) * 50;
+        
+        // More visible cross-hatch
+        if (Math.random() > 0.5) {
+            ctx.strokeStyle = 'rgba(60, 20, 15, 0.35)';
+        } else {
+            ctx.strokeStyle = 'rgba(180, 100, 75, 0.3)';
+        }
+        ctx.lineWidth = 0.4 + Math.random() * 0.3;
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.stroke();
+    }
+
+    // Add diagonal lines for additional texture - MORE VISIBLE
+    for (let i = 0; i < 40; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const length = 40 + Math.random() * 70;
+        const x = Math.random() * width;
+        const y = Math.random() * height;
+        
+        if (Math.random() > 0.5) {
+            ctx.strokeStyle = 'rgba(100, 40, 30, 0.4)';
+        } else {
+            ctx.strokeStyle = 'rgba(200, 120, 90, 0.35)';
+        }
+        ctx.lineWidth = 0.5 + Math.random() * 0.4;
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+        ctx.lineTo(x + Math.cos(angle) * length, y + Math.sin(angle) * length);
+        ctx.stroke();
+    }
+    
+    // Add emboss/relief effect with highlights and shadows
+    for (let i = 0; i < 30; i++) {
+        const x = Math.random() * width;
+        const y = Math.random() * height;
+        const size = 10 + Math.random() * 30;
+        
+        // Highlight
+        const highlightGradient = ctx.createRadialGradient(x - size/3, y - size/3, 0, x, y, size);
+        highlightGradient.addColorStop(0, highlightBrown);
+        highlightGradient.addColorStop(0.5, 'transparent');
+        ctx.fillStyle = highlightGradient;
+        ctx.beginPath();
+        ctx.arc(x, y, size, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Shadow
+        const shadowGradient = ctx.createRadialGradient(x + size/3, y + size/3, 0, x, y, size);
+        shadowGradient.addColorStop(0, shadowBrown);
+        shadowGradient.addColorStop(0.5, 'transparent');
+        ctx.fillStyle = shadowGradient;
+        ctx.beginPath();
+        ctx.arc(x, y, size, 0, Math.PI * 2);
+        ctx.fill();
+    }
+
+    ctx.restore();
 }

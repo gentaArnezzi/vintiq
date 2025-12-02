@@ -360,10 +360,10 @@ export default function Home() {
                                             <div className="absolute top-0 right-0 w-6 h-6 border-t-2 border-r-2 border-[#8B7355]/20"></div>
                                             <h3 className="text-lg font-serif font-medium mb-4 text-[#4A3F35] relative z-10">1. Choose Filter</h3>
                                             <div className="relative z-10">
-                                                <FilterSelector
-                                                    selectedFilter={selectedFilter}
-                                                    onFilterChange={setSelectedFilter}
-                                                />
+                                            <FilterSelector
+                                                selectedFilter={selectedFilter}
+                                                onFilterChange={setSelectedFilter}
+                                            />
                                             </div>
                                         </div>
 
@@ -371,10 +371,10 @@ export default function Home() {
                                             <div className="absolute top-0 right-0 w-6 h-6 border-t-2 border-r-2 border-[#8B7355]/20"></div>
                                             <h3 className="text-lg font-serif font-medium mb-4 text-[#4A3F35] relative z-10">2. Choose Background</h3>
                                             <div className="relative z-10">
-                                                <BackgroundSelector
-                                                    selectedBackground={selectedBackground}
-                                                    onBackgroundChange={setSelectedBackground}
-                                                />
+                                            <BackgroundSelector
+                                                selectedBackground={selectedBackground}
+                                                onBackgroundChange={setSelectedBackground}
+                                            />
                                             </div>
                                         </div>
 
@@ -382,10 +382,10 @@ export default function Home() {
                                             <div className="absolute top-0 right-0 w-6 h-6 border-t-2 border-r-2 border-[#8B7355]/20"></div>
                                             <h3 className="text-lg font-serif font-medium mb-4 text-[#4A3F35] relative z-10">3. Choose Layout</h3>
                                             <div className="relative z-10">
-                                                <LayoutSelector
-                                                    selectedLayout={selectedLayout}
-                                                    onLayoutChange={handleLayoutChange}
-                                                />
+                                            <LayoutSelector
+                                                selectedLayout={selectedLayout}
+                                                onLayoutChange={handleLayoutChange}
+                                            />
                                             </div>
                                         </div>
 
@@ -435,10 +435,10 @@ export default function Home() {
                                     <div className="absolute top-0 right-0 w-6 h-6 border-t-2 border-r-2 border-[#8B7355]/20"></div>
                                     <h3 className="text-lg font-serif font-medium mb-4 text-[#4A3F35] relative z-10">Number of Photos</h3>
                                     <div className="relative z-10">
-                                        <PhotoCountSelector
-                                            selectedCount={selectedPhotoCount as 2 | 3 | 4}
-                                            onCountChange={(count) => handlePhotoCountChange(count)}
-                                        />
+                                    <PhotoCountSelector
+                                        selectedCount={selectedPhotoCount as 2 | 3 | 4}
+                                        onCountChange={(count) => handlePhotoCountChange(count)}
+                                    />
                                     </div>
                                 </div>
 
