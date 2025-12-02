@@ -12,8 +12,8 @@ export async function requestCameraPermission(): Promise<CameraStream> {
     try {
         const stream = await navigator.mediaDevices.getUserMedia({
             video: {
-                width: { ideal: 1280 },
-                height: { ideal: 1920 },
+                width: { ideal: 1280, min: 640, max: 1920 },
+                height: { ideal: 720, min: 480, max: 1080 },
                 facingMode: 'user',
             },
             audio: false,
@@ -129,6 +129,9 @@ export class LivePhotoCapture {
     private intervalId: number | null = null;
     private videoElement: HTMLVideoElement | null = null;
     private canvasElement: HTMLCanvasElement;
+    private videoWidth: number = 0;
+    private videoHeight: number = 0;
+    private resolutionReady: boolean = false;
 
     constructor(bufferSizeSeconds: number = 1.5, fps: number = 15) {
         this.fps = fps;
@@ -138,10 +141,33 @@ export class LivePhotoCapture {
 
     /**
      * Start continuous frame buffering
+     * Handles resolution capture safely, waiting for loadedmetadata if needed
      */
     start(videoElement: HTMLVideoElement): void {
         this.videoElement = videoElement;
         this.frameBuffer = [];
+        this.resolutionReady = false;
+
+        const setResolution = () => {
+            if (!this.videoElement) return;
+            
+            this.videoWidth = this.videoElement.videoWidth;
+            this.videoHeight = this.videoElement.videoHeight;
+            this.resolutionReady = true;
+            
+            console.log('CAM STREAM:', this.videoWidth, 'x', this.videoHeight);
+        };
+
+        // Check if resolution is already available
+        if (videoElement.videoWidth > 0 && videoElement.videoHeight > 0) {
+            setResolution();
+        } else {
+            // Wait for loadedmetadata event
+            const handleLoadedMetadata = () => {
+                setResolution();
+            };
+            videoElement.addEventListener('loadedmetadata', handleLoadedMetadata, { once: true });
+        }
 
         // Capture frames at specified FPS
         this.intervalId = window.setInterval(() => {
@@ -223,6 +249,17 @@ export class LivePhotoCapture {
             percentage: (this.frameBuffer.length / this.bufferSize) * 100
         };
     }
+
+    /**
+     * Get video resolution (returns 0x0 if not ready yet)
+     */
+    getVideoResolution(): { width: number; height: number; ready: boolean } {
+        return {
+            width: this.videoWidth,
+            height: this.videoHeight,
+            ready: this.resolutionReady,
+        };
+    }
 }
 
 /**
@@ -231,7 +268,9 @@ export class LivePhotoCapture {
  */
 export async function createVideoFromFrames(
     frames: string[],
-    fps: number = 15
+    fps: number = 15,
+    videoWidth?: number,
+    videoHeight?: number
 ): Promise<Blob> {
     return new Promise((resolve, reject) => {
         try {
@@ -247,8 +286,17 @@ export async function createVideoFromFrames(
                 return;
             }
 
-            // Create a temporary video element and canvas
+            // Create canvas and set size from provided resolution OR from first frame
             const canvas = document.createElement('canvas');
+            
+            // Set canvas size from provided resolution if available
+            if (videoWidth && videoHeight && videoWidth > 0 && videoHeight > 0) {
+                canvas.width = videoWidth;
+                canvas.height = videoHeight;
+                console.log('CANVAS SET (from stream):', canvas.width, 'x', canvas.height);
+            }
+            // Otherwise, will be set from first frame image below
+
             const video = document.createElement('video');
             const stream = canvas.captureStream(fps);
 
@@ -304,6 +352,15 @@ export async function createVideoFromFrames(
                         reject(new Error('Generated video is empty. This may be a browser compatibility issue.'));
                         return;
                     }
+                    
+                    // Log recorded video resolution for debugging
+                    const testVideo = document.createElement('video');
+                    testVideo.src = URL.createObjectURL(blob);
+                    testVideo.addEventListener('loadedmetadata', () => {
+                        console.log('RECORDED:', testVideo.videoWidth, 'x', testVideo.videoHeight);
+                        URL.revokeObjectURL(testVideo.src);
+                    }, { once: true });
+                    
                     resolve(blob);
                 } catch (error) {
                     reject(new Error('Failed to create video blob: ' + (error instanceof Error ? error.message : String(error))));
@@ -331,6 +388,7 @@ export async function createVideoFromFrames(
 
             let frameIndex = 0;
             const frameDuration = 1000 / fps;
+            const canvasSizeSet = canvas.width > 0 && canvas.height > 0; // Track if we already set canvas size
 
             const drawFrame = () => {
                 if (frameIndex >= frames.length) {
@@ -343,10 +401,11 @@ export async function createVideoFromFrames(
 
                 const img = new Image();
                 img.onload = () => {
-                    // Set canvas size from first frame
-                    if (frameIndex === 0) {
+                    // Set canvas size from first frame ONLY if not already set from provided resolution
+                    if (frameIndex === 0 && !canvasSizeSet) {
                         canvas.width = img.width;
                         canvas.height = img.height;
+                        console.log('CANVAS SET (from first frame):', canvas.width, 'x', canvas.height);
                     }
 
                     // Flip horizontally for correct orientation

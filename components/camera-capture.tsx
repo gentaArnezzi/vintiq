@@ -41,25 +41,6 @@ export default function CameraCapture({
     const [flashActive, setFlashActive] = useState(false);
     const [livePhotoEnabled, setLivePhotoEnabled] = useState(true);
     const [isGeneratingVideo, setIsGeneratingVideo] = useState(false);
-    const [currentPrompt, setCurrentPrompt] = useState<string | null>(null);
-
-    const POSE_PROMPTS = [
-        "Silly Face! 🤪",
-        "Look Left! 👈",
-        "Look Right! 👉",
-        "Big Smile! 😁",
-        "Surprised! 😲",
-        "Serious Mode 😐",
-        "Peace Sign ✌️",
-        "Heart Hands 🫶",
-        "Duck Face 😚",
-        "Wink! 😉",
-        "Tongue Out! 😛",
-        "Thinker 🤔",
-        "Cool 😎",
-        "Scared! 😱",
-        "Sleepy 😴"
-    ];
 
     // Check browser support
     useEffect(() => {
@@ -84,6 +65,13 @@ export default function CameraCapture({
 
             setCameraStream(stream);
             videoRef.current.srcObject = stream.stream;
+
+            // Log resolusi stream setelah loadedmetadata
+            videoRef.current.addEventListener('loadedmetadata', () => {
+                if (videoRef.current) {
+                    console.log('CAM STREAM:', videoRef.current.videoWidth, 'x', videoRef.current.videoHeight);
+                }
+            }, { once: true });
 
             // Handle play() promise safely
             try {
@@ -151,9 +139,6 @@ export default function CameraCapture({
     // Handle photo capture with countdown
     const handleCapture = () => {
         if (countdown !== null) return;
-        // Pick a random prompt
-        const randomPrompt = POSE_PROMPTS[Math.floor(Math.random() * POSE_PROMPTS.length)];
-        setCurrentPrompt(randomPrompt);
         setCountdown(3);
     };
 
@@ -191,7 +176,34 @@ export default function CameraCapture({
                     try {
                         const frames = await livePhotoCaptureRef.current.captureLivePhoto();
                         if (frames.length > 0) {
-                            livePhotoBlob = await createVideoFromFrames(frames, 15);
+                            // Ambil resolusi dan pass ke createVideoFromFrames
+                            const resolution = livePhotoCaptureRef.current.getVideoResolution();
+                            
+                            if (resolution.ready && resolution.width > 0 && resolution.height > 0) {
+                                livePhotoBlob = await createVideoFromFrames(
+                                    frames,
+                                    15,
+                                    resolution.width,
+                                    resolution.height
+                                );
+                            } else {
+                                // Fallback: pakai resolusi dari video element langsung
+                                const width = videoRef.current.videoWidth;
+                                const height = videoRef.current.videoHeight;
+                                if (width > 0 && height > 0) {
+                                    console.warn('Resolution not ready from LivePhotoCapture, using video element directly');
+                                    livePhotoBlob = await createVideoFromFrames(
+                                        frames,
+                                        15,
+                                        width,
+                                        height
+                                    );
+                                } else {
+                                    // Last resort: tanpa resolusi (akan pakai dari first frame)
+                                    console.warn('No resolution available, using first frame size');
+                                    livePhotoBlob = await createVideoFromFrames(frames, 15);
+                                }
+                            }
                         }
                     } catch (videoError) {
                         console.error('Live photo generation failed:', videoError);
@@ -220,7 +232,6 @@ export default function CameraCapture({
 
         capturePhoto();
         setCountdown(null);
-        setCurrentPrompt(null);
     }, [countdown, onPhotoCapture, onError, livePhotoEnabled]);
 
     // Keyboard shortcut
@@ -263,14 +274,9 @@ export default function CameraCapture({
 
                     {countdown !== null && (
                         <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/40 backdrop-blur-[2px] z-20">
-                            <div className="text-white text-9xl font-serif font-light animate-pulse drop-shadow-2xl mb-4">
+                            <div className="text-white text-9xl font-serif font-light animate-pulse drop-shadow-2xl">
                                 {countdown}
                             </div>
-                            {currentPrompt && (
-                                <div className="bg-white/90 text-stone-900 px-6 py-3 rounded-full text-2xl font-bold animate-bounce shadow-lg transform rotate-[-2deg]">
-                                    {currentPrompt}
-                                </div>
-                            )}
                             {/* Visual Timer Bar */}
                             <div className="absolute bottom-0 left-0 h-2 bg-yellow-400 transition-all duration-1000 ease-linear"
                                 style={{ width: `${(countdown / 3) * 100}%` }}

@@ -50,20 +50,33 @@ export default function LivePhotoPreview({
         const canvas = canvasRef.current;
         if (!video || !canvas || !filterType) return;
 
-        const ctx = canvas.getContext('2d');
+        const ctx = canvas.getContext('2d', { 
+            alpha: false,
+            desynchronized: true // Optimize untuk video rendering
+        });
         if (!ctx) return;
+        
+        // Enable image smoothing untuk scaling yang lebih halus
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
 
         // Get container dimensions
         const container = canvas.parentElement;
         if (!container) return;
 
-        const updateCanvasSize = () => {
+        const updateCanvasDisplaySize = () => {
             const rect = container.getBoundingClientRect();
+            // Set CSS size untuk display (di-scale oleh browser)
             canvas.style.width = `${rect.width}px`;
             canvas.style.height = `${rect.height}px`;
         };
 
-        updateCanvasSize();
+        updateCanvasDisplaySize();
+
+        let lastVideoWidth = 0;
+        let lastVideoHeight = 0;
+        let lastContainerWidth = 0;
+        let lastContainerHeight = 0;
 
         const drawFrame = () => {
             if (video.readyState >= 2 && !video.paused) {
@@ -72,20 +85,30 @@ export default function LivePhotoPreview({
                 const containerWidth = container.clientWidth;
                 const containerHeight = container.clientHeight;
                 
-                // Set canvas internal size to match video aspect ratio, scaled to container
-                const scale = Math.min(containerWidth / videoWidth, containerHeight / videoHeight);
-                const width = videoWidth * scale;
-                const height = videoHeight * scale;
+                // Set canvas internal size ke resolusi asli video (hanya jika berubah)
+                // Ini penting untuk mencegah blur - canvas internal size harus tinggi
+                if (canvas.width !== videoWidth || canvas.height !== videoHeight) {
+                    canvas.width = videoWidth;
+                    canvas.height = videoHeight;
+                }
                 
-                canvas.width = width;
-                canvas.height = height;
+                // Set CSS display size ke container (hanya jika berubah)
+                // Browser akan otomatis scale canvas ke container size
+                if (lastContainerWidth !== containerWidth || lastContainerHeight !== containerHeight) {
+                    canvas.style.width = `${containerWidth}px`;
+                    canvas.style.height = `${containerHeight}px`;
+                    lastContainerWidth = containerWidth;
+                    lastContainerHeight = containerHeight;
+                }
 
-                // Draw video frame covering the area (center crop)
-                ctx.drawImage(video, 0, 0, width, height);
+                // Draw video frame dengan resolusi asli
+                ctx.drawImage(video, 0, 0, videoWidth, videoHeight);
 
-                // Apply pixel-based filter (same as canvas generator)
-                applyFilter(ctx, width, height, filterType);
+                // Apply pixel-based filter dengan resolusi asli
+                applyFilter(ctx, videoWidth, videoHeight, filterType);
 
+                lastVideoWidth = videoWidth;
+                lastVideoHeight = videoHeight;
                 animationFrameRef.current = requestAnimationFrame(drawFrame);
             }
         };
@@ -102,14 +125,19 @@ export default function LivePhotoPreview({
                 img.onload = () => {
                     const containerWidth = container.clientWidth;
                     const containerHeight = container.clientHeight;
-                    const scale = Math.min(containerWidth / img.width, containerHeight / img.height);
-                    const width = img.width * scale;
-                    const height = img.height * scale;
                     
-                    canvas.width = width;
-                    canvas.height = height;
-                    ctx.drawImage(img, 0, 0, width, height);
-                    applyFilter(ctx, width, height, filterType);
+                    // Gunakan resolusi asli image untuk canvas internal size
+                    // Ini penting untuk mencegah blur
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    
+                    // Set CSS display size ke container (canvas akan di-scale oleh browser)
+                    canvas.style.width = `${containerWidth}px`;
+                    canvas.style.height = `${containerHeight}px`;
+                    
+                    // Draw image dengan resolusi asli
+                    ctx.drawImage(img, 0, 0, img.width, img.height);
+                    applyFilter(ctx, img.width, img.height, filterType);
                 };
                 img.src = stillImage;
             }
