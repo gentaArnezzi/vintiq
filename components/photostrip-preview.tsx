@@ -181,6 +181,7 @@ export default function PhotostripPreview({
 
     // Map filter type to CSS filter string for video preview
     // Updated to match pixel-based filters more closely
+    // Note: VintageJS filters use complex effects that can't be fully replicated with CSS
     const getFilterStyle = (type: FilterType): string => {
         switch (type) {
             case 'vintiq-warm':
@@ -207,6 +208,44 @@ export default function PhotostripPreview({
             case 'cinematic-cool':
                 // Teal and orange
                 return 'saturate(1.15) hue-rotate(-5deg) contrast(1.1) brightness(1.05)';
+            // VintageJS filters - approximate CSS representation
+            case 'vintagejs-classic':
+                return 'sepia(0.5) saturate(0.7) brightness(0.9) contrast(1.15)';
+            case 'vintagejs-sepia':
+                return 'sepia(0.8) saturate(0.5) brightness(0.85) contrast(1.2)';
+            case 'vintagejs-bright':
+                return 'brightness(1.1) saturate(0.8) contrast(1.1)';
+            case 'vintagejs-dark':
+                return 'brightness(0.8) contrast(1.25) saturate(0.6)';
+            case 'vintagejs-warm':
+                return 'sepia(0.2) saturate(0.9) brightness(0.95) contrast(1.15)';
+            case 'vintagejs-cool':
+                return 'brightness(0.9) saturate(0.8) contrast(1.15) hue-rotate(5deg)';
+            case 'vintagejs-faded':
+                return 'brightness(1.15) contrast(0.8) saturate(0.6)';
+            case 'vintagejs-high-contrast':
+                return 'brightness(0.9) contrast(1.3) saturate(0.9)';
+            case 'vintagejs-soft':
+                return 'brightness(1.05) contrast(0.9) saturate(0.7)';
+            case 'vintagejs-vivid':
+                return 'brightness(0.95) contrast(1.2) saturate(1.2)';
+            // New Vintage filters - approximate CSS representation
+            case 'vintage-warm':
+                return 'sepia(0.6) saturate(0.8) brightness(0.9) contrast(1.1)';
+            case 'vintage-sepia':
+                return 'sepia(0.7) saturate(0.5) brightness(0.85) contrast(1.15)';
+            case 'vintage-bw':
+                return 'grayscale(1) brightness(0.9) contrast(1.2)';
+            case 'vintage-fade':
+                return 'sepia(0.5) brightness(1.1) contrast(0.8) saturate(0.6)';
+            case 'vintage-classic':
+                return 'sepia(0.6) saturate(0.7) brightness(0.9) contrast(1.1)';
+            case 'vintage-old':
+                return 'sepia(0.7) saturate(0.4) brightness(0.8) contrast(1.05)';
+            case 'vintage-grainy':
+                return 'sepia(0.6) saturate(0.6) brightness(0.85) contrast(1.2)';
+            case 'vintage-soft':
+                return 'brightness(1.05) contrast(0.9) saturate(0.8)';
             default: return '';
         }
     };

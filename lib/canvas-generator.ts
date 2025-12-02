@@ -109,7 +109,7 @@ export async function generatePhotostrip({
                 drawCover(tempCtx, img, PHOTO_WIDTH, PHOTO_HEIGHT);
 
                 // Apply filter
-                applyFilter(tempCtx, PHOTO_WIDTH, PHOTO_HEIGHT, filter);
+                await applyFilter(tempCtx, PHOTO_WIDTH, PHOTO_HEIGHT, filter);
 
                 // Draw photo
                 ctx.drawImage(tempCanvas, PADDING_X, y);
@@ -229,7 +229,7 @@ async function generateGridLayout(
 
             if (tempCtx) {
                 drawCover(tempCtx, img, PHOTO_SIZE, PHOTO_SIZE);
-                applyFilter(tempCtx, PHOTO_SIZE, PHOTO_SIZE, filter);
+                await applyFilter(tempCtx, PHOTO_SIZE, PHOTO_SIZE, filter);
                 ctx.drawImage(tempCanvas, x, y);
             }
         } else {
@@ -319,7 +319,7 @@ async function generatePolaroidLayout(
 
         if (tempCtx) {
             drawCover(tempCtx, img, PHOTO_WIDTH, PHOTO_HEIGHT);
-            applyFilter(tempCtx, PHOTO_WIDTH, PHOTO_HEIGHT, filter);
+            await applyFilter(tempCtx, PHOTO_WIDTH, PHOTO_HEIGHT, filter);
             ctx.drawImage(tempCanvas, PADDING_X, y);
         }
         
@@ -2127,7 +2127,7 @@ export async function generateLiveStripVideo({
                             drawCoverVideo(tempCtx, video, 0, 0, PHOTO_WIDTH, PHOTO_HEIGHT);
 
                             // Apply filter using same method as static photos
-                            applyFilter(tempCtx, PHOTO_WIDTH, PHOTO_HEIGHT, filter);
+                            await applyFilter(tempCtx, PHOTO_WIDTH, PHOTO_HEIGHT, filter);
 
                             // Draw processed video frame
                             ctx.drawImage(tempCanvas, x, y);
@@ -2154,7 +2154,7 @@ export async function generateLiveStripVideo({
                             drawCover(tempCtx, image, PHOTO_WIDTH, PHOTO_HEIGHT);
 
                             // Apply filter
-                            applyFilter(tempCtx, PHOTO_WIDTH, PHOTO_HEIGHT, filter);
+                            await applyFilter(tempCtx, PHOTO_WIDTH, PHOTO_HEIGHT, filter);
 
                             // Draw photo
                             ctx.drawImage(tempCanvas, x, y);

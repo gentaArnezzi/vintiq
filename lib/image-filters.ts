@@ -1,3 +1,5 @@
+import vintagejs from 'vintagejs';
+
 export type FilterType =
     | 'vintiq-warm'
     | 'sepia-classic'
@@ -6,13 +8,72 @@ export type FilterType =
     | 'kodak-gold'
     | 'fuji-superia'
     | 'drama-bw'
-    | 'cinematic-cool';
+    | 'cinematic-cool'
+    | 'vintagejs-classic'
+    | 'vintagejs-sepia'
+    | 'vintagejs-bright'
+    | 'vintagejs-dark'
+    | 'vintagejs-warm'
+    | 'vintagejs-cool'
+    | 'vintagejs-faded'
+    | 'vintagejs-high-contrast'
+    | 'vintagejs-soft'
+    | 'vintagejs-vivid'
+    | 'vintage-warm'
+    | 'vintage-sepia'
+    | 'vintage-bw'
+    | 'vintage-fade'
+    | 'vintage-classic'
+    | 'vintage-old'
+    | 'vintage-grainy'
+    | 'vintage-soft';
 
 export interface FilterConfig {
     name: string;
     displayName: string;
     description: string;
-    apply: (ctx: CanvasRenderingContext2D, width: number, height: number) => void;
+    apply: (ctx: CanvasRenderingContext2D, width: number, height: number) => void | Promise<void>;
+}
+
+/**
+ * Apply vintageJS effect to canvas
+ * Helper function to use vintageJS library
+ * Based on: https://github.com/rendro/vintageJS
+ */
+async function applyVintageJSEffect(
+    ctx: CanvasRenderingContext2D,
+    width: number,
+    height: number,
+    effect: any
+): Promise<void> {
+    const canvas = ctx.canvas;
+    
+    try {
+        // Create a copy of the current canvas content
+        const imageData = ctx.getImageData(0, 0, width, height);
+        
+        // Create temporary canvas for vintageJS
+        const tempCanvas = document.createElement('canvas');
+        tempCanvas.width = width;
+        tempCanvas.height = height;
+        const tempCtx = tempCanvas.getContext('2d');
+        
+        if (!tempCtx) return;
+        
+        // Put image data to temp canvas
+        tempCtx.putImageData(imageData, 0, 0);
+        
+        // Use vintageJS on the temp canvas
+        const result = await vintagejs(tempCanvas, effect);
+        const resultCanvas = result.getCanvas();
+        
+        // Copy result back to original canvas
+        ctx.clearRect(0, 0, width, height);
+        ctx.drawImage(resultCanvas, 0, 0, width, height);
+    } catch (error) {
+        console.error('Error applying vintageJS effect:', error);
+        // Fallback: continue without vintageJS
+    }
 }
 
 export const FILTERS: Record<FilterType, FilterConfig> = {
@@ -223,20 +284,297 @@ export const FILTERS: Record<FilterType, FilterConfig> = {
             }
             ctx.putImageData(imageData, 0, 0);
         }
+    },
+    // VintageJS Filters
+    'vintagejs-classic': {
+        name: 'vintagejs-classic',
+        displayName: 'Vintage Classic',
+        description: 'Classic vintage look with sepia and vignette',
+        apply: async (ctx, width, height) => {
+            await applyVintageJSEffect(ctx, width, height, {
+                brightness: -0.1,
+                contrast: 0.15,
+                saturation: 0.7,
+                sepia: true,
+                vignette: 0.3
+            });
+        }
+    },
+    'vintagejs-sepia': {
+        name: 'vintagejs-sepia',
+        displayName: 'Vintage Sepia',
+        description: 'Rich sepia tone with warm vintage feel',
+        apply: async (ctx, width, height) => {
+            await applyVintageJSEffect(ctx, width, height, {
+                brightness: -0.15,
+                contrast: 0.2,
+                saturation: 0.5,
+                sepia: true,
+                vignette: 0.4
+            });
+        }
+    },
+    'vintagejs-bright': {
+        name: 'vintagejs-bright',
+        displayName: 'Vintage Bright',
+        description: 'Bright vintage look with soft tones',
+        apply: async (ctx, width, height) => {
+            await applyVintageJSEffect(ctx, width, height, {
+                brightness: 0.1,
+                contrast: 0.1,
+                saturation: 0.8,
+                sepia: false,
+                lighten: 0.15,
+                vignette: 0.2
+            });
+        }
+    },
+    'vintagejs-dark': {
+        name: 'vintagejs-dark',
+        displayName: 'Vintage Dark',
+        description: 'Moody dark vintage with strong vignette',
+        apply: async (ctx, width, height) => {
+            await applyVintageJSEffect(ctx, width, height, {
+                brightness: -0.2,
+                contrast: 0.25,
+                saturation: 0.6,
+                sepia: false,
+                vignette: 0.5
+            });
+        }
+    },
+    'vintagejs-warm': {
+        name: 'vintagejs-warm',
+        displayName: 'Vintage Warm',
+        description: 'Warm vintage tones with golden glow',
+        apply: async (ctx, width, height) => {
+            await applyVintageJSEffect(ctx, width, height, {
+                brightness: -0.05,
+                contrast: 0.15,
+                saturation: 0.9,
+                sepia: false,
+                vignette: 0.25,
+                screen: {
+                    r: 255,
+                    g: 220,
+                    b: 150,
+                    a: 0.15
+                }
+            });
+        }
+    },
+    'vintagejs-cool': {
+        name: 'vintagejs-cool',
+        displayName: 'Vintage Cool',
+        description: 'Cool vintage tones with blue shadows',
+        apply: async (ctx, width, height) => {
+            await applyVintageJSEffect(ctx, width, height, {
+                brightness: -0.1,
+                contrast: 0.15,
+                saturation: 0.8,
+                sepia: false,
+                vignette: 0.3,
+                screen: {
+                    r: 200,
+                    g: 220,
+                    b: 255,
+                    a: 0.1
+                }
+            });
+        }
+    },
+    'vintagejs-faded': {
+        name: 'vintagejs-faded',
+        displayName: 'Vintage Faded',
+        description: 'Faded vintage look with lifted blacks',
+        apply: async (ctx, width, height) => {
+            await applyVintageJSEffect(ctx, width, height, {
+                brightness: 0.15,
+                contrast: -0.2,
+                saturation: 0.6,
+                sepia: false,
+                lighten: 0.2,
+                vignette: 0.15
+            });
+        }
+    },
+    'vintagejs-high-contrast': {
+        name: 'vintagejs-high-contrast',
+        displayName: 'Vintage High Contrast',
+        description: 'High contrast vintage with dramatic look',
+        apply: async (ctx, width, height) => {
+            await applyVintageJSEffect(ctx, width, height, {
+                brightness: -0.1,
+                contrast: 0.3,
+                saturation: 0.9,
+                sepia: false,
+                vignette: 0.4
+            });
+        }
+    },
+    'vintagejs-soft': {
+        name: 'vintagejs-soft',
+        displayName: 'Vintage Soft',
+        description: 'Soft vintage with gentle tones',
+        apply: async (ctx, width, height) => {
+            await applyVintageJSEffect(ctx, width, height, {
+                brightness: 0.05,
+                contrast: -0.1,
+                saturation: 0.7,
+                sepia: false,
+                lighten: 0.1,
+                vignette: 0.2
+            });
+        }
+    },
+    'vintagejs-vivid': {
+        name: 'vintagejs-vivid',
+        displayName: 'Vintage Vivid',
+        description: 'Vivid vintage with enhanced colors',
+        apply: async (ctx, width, height) => {
+            await applyVintageJSEffect(ctx, width, height, {
+                brightness: -0.05,
+                contrast: 0.2,
+                saturation: 1.2,
+                sepia: false,
+                vignette: 0.3
+            });
+        }
+    },
+    // New VintageJS Filters (specified configurations)
+    'vintage-warm': {
+        name: 'vintage-warm',
+        displayName: 'Vintiq Warm',
+        description: 'Warm vintage tones with sepia',
+        apply: async (ctx, width, height) => {
+            await applyVintageJSEffect(ctx, width, height, {
+                brightness: -0.1,
+                contrast: 0.1,
+                saturation: 0.8,
+                sepia: true,
+                vignette: 0.2
+            });
+        }
+    },
+    'vintage-sepia': {
+        name: 'vintage-sepia',
+        displayName: 'Vintiq Sepia',
+        description: 'Classic sepia with vintage feel',
+        apply: async (ctx, width, height) => {
+            await applyVintageJSEffect(ctx, width, height, {
+                brightness: -0.15,
+                contrast: 0.15,
+                saturation: 0.5,
+                sepia: true,
+                vignette: 0.3,
+                lighten: 0.1
+            });
+        }
+    },
+    'vintage-bw': {
+        name: 'vintage-bw',
+        displayName: 'Vintiq B&W',
+        description: 'Black and white vintage look',
+        apply: async (ctx, width, height) => {
+            await applyVintageJSEffect(ctx, width, height, {
+                brightness: -0.1,
+                contrast: 0.2,
+                gray: true,
+                vignette: 0.4
+            });
+        }
+    },
+    'vintage-fade': {
+        name: 'vintage-fade',
+        displayName: 'Vintiq Fade',
+        description: 'Faded vintage with sepia tone',
+        apply: async (ctx, width, height) => {
+            await applyVintageJSEffect(ctx, width, height, {
+                brightness: 0.1,
+                contrast: -0.2,
+                saturation: 0.6,
+                sepia: true,
+                lighten: 0.2,
+                vignette: 0.3
+            });
+        }
+    },
+    'vintage-classic': {
+        name: 'vintage-classic',
+        displayName: 'Vintiq Classic',
+        description: 'Classic vintage look',
+        apply: async (ctx, width, height) => {
+            await applyVintageJSEffect(ctx, width, height, {
+                brightness: -0.1,
+                contrast: 0.1,
+                saturation: 0.7,
+                sepia: true,
+                vignette: 0.3
+            });
+        }
+    },
+    'vintage-old': {
+        name: 'vintage-old',
+        displayName: 'Vintiq Old',
+        description: 'Aged vintage photo effect',
+        apply: async (ctx, width, height) => {
+            await applyVintageJSEffect(ctx, width, height, {
+                brightness: -0.2,
+                contrast: 0.05,
+                saturation: 0.4,
+                sepia: true,
+                vignette: 0.5,
+                lighten: 0.15
+            });
+        }
+    },
+    'vintage-grainy': {
+        name: 'vintage-grainy',
+        displayName: 'Vintiq Grainy',
+        description: 'Grainy vintage with sepia',
+        apply: async (ctx, width, height) => {
+            await applyVintageJSEffect(ctx, width, height, {
+                brightness: -0.15,
+                contrast: 0.2,
+                saturation: 0.6,
+                sepia: true,
+                vignette: 0.4
+            });
+        }
+    },
+    'vintage-soft': {
+        name: 'vintage-soft',
+        displayName: 'Vintiq Soft',
+        description: 'Soft vintage tones',
+        apply: async (ctx, width, height) => {
+            await applyVintageJSEffect(ctx, width, height, {
+                brightness: 0.05,
+                contrast: -0.1,
+                saturation: 0.8,
+                sepia: false,
+                vignette: 0.2,
+                lighten: 0.1
+            });
+        }
     }
 };
 
 /**
  * Apply selected filter to canvas
+ * Supports both sync and async filters
  */
-export function applyFilter(
+export async function applyFilter(
     ctx: CanvasRenderingContext2D,
     width: number,
     height: number,
     filterType: FilterType
-): void {
+): Promise<void> {
     const filter = FILTERS[filterType];
     if (filter) {
-        filter.apply(ctx, width, height);
+        const result = filter.apply(ctx, width, height);
+        // If filter returns a Promise, wait for it
+        if (result instanceof Promise) {
+            await result;
+        }
     }
 }

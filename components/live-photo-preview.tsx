@@ -78,7 +78,7 @@ export default function LivePhotoPreview({
         let lastContainerWidth = 0;
         let lastContainerHeight = 0;
 
-        const drawFrame = () => {
+        const drawFrame = async () => {
             if (video.readyState >= 2 && !video.paused) {
                 const videoWidth = video.videoWidth || 1;
                 const videoHeight = video.videoHeight || 1;
@@ -105,7 +105,7 @@ export default function LivePhotoPreview({
                 ctx.drawImage(video, 0, 0, videoWidth, videoHeight);
 
                 // Apply pixel-based filter dengan resolusi asli
-                applyFilter(ctx, videoWidth, videoHeight, filterType);
+                await applyFilter(ctx, videoWidth, videoHeight, filterType);
 
                 lastVideoWidth = videoWidth;
                 lastVideoHeight = videoHeight;
@@ -122,7 +122,7 @@ export default function LivePhotoPreview({
             // Draw still image with filter when not playing
             if (stillImage && filterType) {
                 const img = new Image();
-                img.onload = () => {
+                img.onload = async () => {
                     const containerWidth = container.clientWidth;
                     const containerHeight = container.clientHeight;
                     
@@ -137,7 +137,7 @@ export default function LivePhotoPreview({
                     
                     // Draw image dengan resolusi asli
                     ctx.drawImage(img, 0, 0, img.width, img.height);
-                    applyFilter(ctx, img.width, img.height, filterType);
+                    await applyFilter(ctx, img.width, img.height, filterType);
                 };
                 img.src = stillImage;
             }
