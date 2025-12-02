@@ -25,8 +25,9 @@ const BACKGROUNDS: { id: BackgroundStyle; name: string; class: string }[] = [
     { id: 'aged-wood', name: 'Aged Wood', class: 'bg-[#6b5238]' },
     { id: 'weathered-wood', name: 'Weathered Wood', class: 'bg-[#5a4530]' },
     { id: 'barn-wood', name: 'Barn Wood', class: 'bg-[#7a5f42]' },
-    { id: 'vintage-brown', name: 'Vintage Brown', class: 'bg-[#a0462d]' },
-    { id: 'vintage-brown-textured', name: 'Vintage Brown Textured', class: 'bg-[#a0462d]' },
+    { id: 'vintage-brown', name: 'Rustic Terracotta', class: 'bg-[#a0462d]' },
+    { id: 'vintage-brown-textured', name: 'Weathered Rust', class: 'bg-[#a0462d]' },
+    { id: 'vintage-brown-brick', name: 'Brick Wall', class: 'bg-[#a0462d]' },
 ];
 
 export default function BackgroundSelector({
@@ -45,7 +46,8 @@ export default function BackgroundSelector({
                     'weathered-wood',
                     'barn-wood',
                     'vintage-brown',
-                    'vintage-brown-textured'
+                    'vintage-brown-textured',
+                    'vintage-brown-brick'
                 ];
                 const isDark = darkBackgrounds.includes(bg.id);
 

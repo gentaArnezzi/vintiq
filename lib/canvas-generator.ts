@@ -19,7 +19,8 @@ export type BackgroundStyle =
     | 'weathered-wood'
     | 'barn-wood'
     | 'vintage-brown'
-    | 'vintage-brown-textured';
+    | 'vintage-brown-textured'
+    | 'vintage-brown-brick';
 
 interface GenerateOptions {
     photos: (string | null)[];
@@ -517,6 +518,15 @@ function drawBackground(
             // Add heavy vintage texture effects
             drawVintageBrownTextured(ctx, width, height);
             break;
+        case 'vintage-brown-brick':
+            // Vintage brown background with color #a0462d and brick texture
+            ctx.fillStyle = '#a0462d';
+            ctx.fillRect(0, 0, width, height);
+            // Add noise for texture
+            addNoise(ctx, width, height, 0.1);
+            // Add brick texture
+            drawBrickTexture(ctx, width, height);
+            break;
         case 'classic-cream':
         default:
             // Vintage gradient
@@ -747,7 +757,8 @@ function drawBranding(
         'weathered-wood',
         'barn-wood',
         'vintage-brown',
-        'vintage-brown-textured'
+        'vintage-brown-textured',
+        'vintage-brown-brick'
     ];
 
     const isDark = darkBackgrounds.includes(background);
@@ -2505,6 +2516,111 @@ function drawVintageBrownTextured(ctx: CanvasRenderingContext2D, width: number, 
         shadowGradient.addColorStop(0, shadowBrown);
         shadowGradient.addColorStop(0.5, 'transparent');
         ctx.fillStyle = shadowGradient;
+        ctx.beginPath();
+        ctx.arc(x, y, size, 0, Math.PI * 2);
+        ctx.fill();
+    }
+
+    ctx.restore();
+}
+
+// Draw brick texture for vintage brown background
+function drawBrickTexture(ctx: CanvasRenderingContext2D, width: number, height: number) {
+    ctx.save();
+
+    // Brick dimensions
+    const brickWidth = 80;
+    const brickHeight = 30;
+    const mortarWidth = 3;
+    
+    // Brick colors - variations of the red brown
+    const brickColor1 = 'rgba(160, 70, 45, 0.4)'; // Lighter brick
+    const brickColor2 = 'rgba(140, 60, 40, 0.45)'; // Medium brick
+    const brickColor3 = 'rgba(120, 50, 35, 0.5)'; // Darker brick
+    const mortarColor = 'rgba(80, 30, 20, 0.6)'; // Dark mortar
+    
+    // Offset for staggered brick pattern
+    let offset = 0;
+    let row = 0;
+
+    // Draw bricks row by row
+    for (let y = 0; y < height; y += brickHeight + mortarWidth) {
+        // Alternate offset for staggered pattern
+        offset = (row % 2 === 0) ? 0 : (brickWidth + mortarWidth) / 2;
+        
+        for (let x = -offset; x < width; x += brickWidth + mortarWidth) {
+            // Random brick color variation
+            const colorChoice = Math.random();
+            let brickColor;
+            if (colorChoice < 0.33) {
+                brickColor = brickColor1;
+            } else if (colorChoice < 0.66) {
+                brickColor = brickColor2;
+            } else {
+                brickColor = brickColor3;
+            }
+            
+            // Draw brick
+            ctx.fillStyle = brickColor;
+            ctx.fillRect(x, y, brickWidth, brickHeight);
+            
+            // Add subtle highlight on top edge
+            ctx.strokeStyle = 'rgba(180, 90, 65, 0.3)';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+            ctx.lineTo(x + brickWidth, y);
+            ctx.stroke();
+            
+            // Add subtle shadow on bottom edge
+            ctx.strokeStyle = 'rgba(80, 30, 20, 0.4)';
+            ctx.beginPath();
+            ctx.moveTo(x, y + brickHeight);
+            ctx.lineTo(x + brickWidth, y + brickHeight);
+            ctx.stroke();
+            
+            // Add subtle shadow on right edge (for depth)
+            ctx.strokeStyle = 'rgba(80, 30, 20, 0.3)';
+            ctx.beginPath();
+            ctx.moveTo(x + brickWidth, y);
+            ctx.lineTo(x + brickWidth, y + brickHeight);
+            ctx.stroke();
+        }
+        
+        // Draw horizontal mortar line
+        ctx.fillStyle = mortarColor;
+        ctx.fillRect(0, y + brickHeight, width, mortarWidth);
+        
+        row++;
+    }
+    
+    // Add some texture variation - random darker spots
+    for (let i = 0; i < 20; i++) {
+        const x = Math.random() * width;
+        const y = Math.random() * height;
+        const size = 5 + Math.random() * 15;
+        
+        const gradient = ctx.createRadialGradient(x, y, 0, x, y, size);
+        gradient.addColorStop(0, 'rgba(80, 30, 20, 0.4)');
+        gradient.addColorStop(1, 'transparent');
+        
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(x, y, size, 0, Math.PI * 2);
+        ctx.fill();
+    }
+    
+    // Add some lighter spots for variation
+    for (let i = 0; i < 15; i++) {
+        const x = Math.random() * width;
+        const y = Math.random() * height;
+        const size = 3 + Math.random() * 10;
+        
+        const gradient = ctx.createRadialGradient(x, y, 0, x, y, size);
+        gradient.addColorStop(0, 'rgba(180, 90, 65, 0.3)');
+        gradient.addColorStop(1, 'transparent');
+        
+        ctx.fillStyle = gradient;
         ctx.beginPath();
         ctx.arc(x, y, size, 0, Math.PI * 2);
         ctx.fill();
