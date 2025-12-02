@@ -1,7 +1,7 @@
 import { applyFilter, type FilterType } from './image-filters';
 import { format } from 'date-fns';
 
-export type LayoutType = 'vertical-4';
+export type LayoutType = 'vertical-2' | 'vertical-3' | 'vertical-4';
 export type BackgroundStyle =
     | 'classic-cream'
     | 'vintage-paper'
@@ -39,7 +39,7 @@ export async function generatePhotostrip({
         throw new Error('Failed to get canvas context');
     }
 
-    // Constants for 4-strip layout
+    // Constants for strip layout
     const STRIP_WIDTH = 600;
     const PHOTO_WIDTH = 520; // Width of photo area
     const PHOTO_HEIGHT = 390; // 4:3 aspect ratio
@@ -48,8 +48,11 @@ export async function generatePhotostrip({
     const GAP = 30;
     const BOTTOM_SPACE = 120; // Space for branding
 
-    // Calculate total height
-    const STRIP_HEIGHT = PADDING_TOP + (PHOTO_HEIGHT * 4) + (GAP * 3) + BOTTOM_SPACE;
+    // Determine photo count from layout (always use layout, not actual photos count)
+    const photoCount = layout === 'vertical-2' ? 2 : layout === 'vertical-3' ? 3 : 4;
+
+    // Calculate total height dynamically based on photo count
+    const STRIP_HEIGHT = PADDING_TOP + (PHOTO_HEIGHT * photoCount) + (GAP * (photoCount - 1)) + BOTTOM_SPACE;
 
     canvas.width = STRIP_WIDTH;
     canvas.height = STRIP_HEIGHT;
@@ -58,8 +61,8 @@ export async function generatePhotostrip({
     drawBackground(ctx, STRIP_WIDTH, STRIP_HEIGHT, background);
 
     // 2. Process and Draw Photos
-    for (let i = 0; i < photos.length; i++) {
-        const photoUrl = photos[i];
+    for (let i = 0; i < photoCount; i++) {
+        const photoUrl = i < photos.length ? photos[i] : null;
         const y = PADDING_TOP + i * (PHOTO_HEIGHT + GAP);
 
         // Draw frame based on background type
@@ -1264,10 +1267,13 @@ export async function generateLiveStripVideo({
     background = 'classic-cream'
 }: LiveStripOptions): Promise<Blob> {
     return new Promise(async (resolve, reject) => {
+        // Determine photo count from layout (always use layout, not actual photos count)
+        const photoCount = layout === 'vertical-2' ? 2 : layout === 'vertical-3' ? 3 : 4;
+
         // Initialize arrays with fixed length to maintain exact order
-        const videoElements: (HTMLVideoElement | undefined)[] = new Array(4);
+        const videoElements: (HTMLVideoElement | undefined)[] = new Array(photoCount);
         const videoUrls: string[] = [];
-        const imageElements: (HTMLImageElement | undefined)[] = new Array(4);
+        const imageElements: (HTMLImageElement | undefined)[] = new Array(photoCount);
 
         try {
             const canvas = document.createElement('canvas');
@@ -1285,7 +1291,7 @@ export async function generateLiveStripVideo({
             const PADDING_TOP = 60;
             const GAP = 30;
             const BOTTOM_SPACE = 120;
-            const STRIP_HEIGHT = PADDING_TOP + (PHOTO_HEIGHT * 4) + (GAP * 3) + BOTTOM_SPACE;
+            const STRIP_HEIGHT = PADDING_TOP + (PHOTO_HEIGHT * photoCount) + (GAP * (photoCount - 1)) + BOTTOM_SPACE;
 
             canvas.width = STRIP_WIDTH;
             canvas.height = STRIP_HEIGHT;
@@ -1431,7 +1437,7 @@ export async function generateLiveStripVideo({
                 // 2. Draw Photos/Videos
                 // IMPORTANT: Maintain exact order from input arrays (photos and livePhotos)
                 // Index i corresponds to the same position in both arrays
-                for (let i = 0; i < 4; i++) {
+                for (let i = 0; i < photoCount; i++) {
                     const y = PADDING_TOP + i * (PHOTO_HEIGHT + GAP);
 
                     // Draw frame based on background type

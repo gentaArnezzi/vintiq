@@ -36,10 +36,16 @@ export default function PhotostripPreview({
         const generate = async () => {
             setIsGenerating(true);
             try {
+                const layoutMap: Record<number, 'vertical-2' | 'vertical-3' | 'vertical-4'> = {
+                    2: 'vertical-2',
+                    3: 'vertical-3',
+                    4: 'vertical-4',
+                };
+                
                 const canvas = await generatePhotostrip({
                     photos,
                     filter,
-                    layout: 'vertical-4',
+                    layout: layoutMap[maxPhotos] || 'vertical-4',
                     background,
                 });
 
@@ -60,19 +66,26 @@ export default function PhotostripPreview({
             active = false;
             clearTimeout(timer);
         };
-    }, [photos, filter, background]);
+    }, [photos, filter, background, maxPhotos]);
 
-    // Calculated positions for overlay buttons (based on canvas layout)
-    // Total Height: 1830px
-    // Photo Height: 390px
-    // Top Padding: 60px
-    // Gap: 30px
-    const overlayPositions = [
-        { top: '3.3%', height: '21.3%' },
-        { top: '26.2%', height: '21.3%' },
-        { top: '49.1%', height: '21.3%' },
-        { top: '72.0%', height: '21.3%' },
-    ];
+    // Calculate overlay positions dynamically based on photo count
+    // Constants: PHOTO_HEIGHT = 390px, PADDING_TOP = 60px, GAP = 30px, BOTTOM_SPACE = 120px
+    const calculateOverlayPositions = (count: number) => {
+        const PHOTO_HEIGHT = 390;
+        const PADDING_TOP = 60;
+        const GAP = 30;
+        const BOTTOM_SPACE = 120;
+        const totalHeight = PADDING_TOP + (PHOTO_HEIGHT * count) + (GAP * (count - 1)) + BOTTOM_SPACE;
+        
+        return Array.from({ length: count }, (_, i) => {
+            const photoTop = PADDING_TOP + i * (PHOTO_HEIGHT + GAP);
+            const topPercent = (photoTop / totalHeight) * 100;
+            const heightPercent = (PHOTO_HEIGHT / totalHeight) * 100;
+            return { top: `${topPercent.toFixed(1)}%`, height: `${heightPercent.toFixed(1)}%` };
+        });
+    };
+
+    const overlayPositions = calculateOverlayPositions(maxPhotos);
 
     // Map filter type to CSS filter string for video preview
     // Updated to match pixel-based filters more closely

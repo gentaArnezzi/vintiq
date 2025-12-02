@@ -11,17 +11,17 @@ import FilterSelector from '@/components/filter-selector';
 import ResultModal from '@/components/result-modal';
 import ErrorMessage from '@/components/error-message';
 import BackgroundSelector from '@/components/background-selector';
+import PhotoCountSelector from '@/components/photo-count-selector';
 import { generatePhotostrip, type BackgroundStyle } from '@/lib/canvas-generator';
 import type { FilterType } from '@/lib/image-filters';
 
 type PhotoMode = 'select' | 'camera' | 'upload';
 
-const MAX_PHOTOS = 4;
-
 export default function Home() {
     const [mode, setMode] = useState<PhotoMode>('select');
-    const [photos, setPhotos] = useState<(string | null)[]>(Array(MAX_PHOTOS).fill(null));
-    const [livePhotos, setLivePhotos] = useState<(Blob | null)[]>(Array(MAX_PHOTOS).fill(null));
+    const [selectedPhotoCount, setSelectedPhotoCount] = useState<2 | 3 | 4>(4);
+    const [photos, setPhotos] = useState<(string | null)[]>(Array(4).fill(null));
+    const [livePhotos, setLivePhotos] = useState<(Blob | null)[]>(Array(4).fill(null));
     const [selectedFilter, setSelectedFilter] = useState<FilterType>('vintiq-warm');
     const [selectedBackground, setSelectedBackground] = useState<BackgroundStyle>('classic-cream');
     const [isGenerating, setIsGenerating] = useState(false);
@@ -29,7 +29,7 @@ export default function Home() {
     const [error, setError] = useState<string>('');
 
     const currentSlot = photos.findIndex((p) => p === null);
-    const allPhotosCaptured = currentSlot === -1;
+    const allPhotosCaptured = currentSlot === -1 || currentSlot >= selectedPhotoCount;
 
     // Handle photo capture from camera (with live photo support)
     // IMPORTANT: Use the same index for both photos and livePhotos to maintain order
@@ -57,16 +57,47 @@ export default function Home() {
         }
     }, []);
 
+    // Handle photo count change
+    const handlePhotoCountChange = useCallback((count: 2 | 3 | 4) => {
+        setSelectedPhotoCount(count);
+        
+        setPhotos((prev) => {
+            const newPhotos = [...prev];
+            // Trim if new count is smaller
+            if (count < newPhotos.length) {
+                return newPhotos.slice(0, count);
+            }
+            // Extend if new count is larger
+            if (count > newPhotos.length) {
+                return [...newPhotos, ...Array(count - newPhotos.length).fill(null)];
+            }
+            return newPhotos;
+        });
+        
+        setLivePhotos((prev) => {
+            const newLivePhotos = [...prev];
+            // Trim if new count is smaller
+            if (count < newLivePhotos.length) {
+                return newLivePhotos.slice(0, count);
+            }
+            // Extend if new count is larger
+            if (count > newLivePhotos.length) {
+                return [...newLivePhotos, ...Array(count - newLivePhotos.length).fill(null)];
+            }
+            return newLivePhotos;
+        });
+    }, []);
+
     // Handle photo upload
     const handlePhotoUpload = useCallback((photoDataUrls: string[]) => {
-        const newPhotos = Array(MAX_PHOTOS).fill(null);
+        const newPhotos = Array(selectedPhotoCount).fill(null);
         photoDataUrls.forEach((url, index) => {
-            if (index < MAX_PHOTOS) {
+            if (index < selectedPhotoCount) {
                 newPhotos[index] = url;
             }
         });
         setPhotos(newPhotos);
-    }, []);
+    }, [selectedPhotoCount]);
 
     // Remove photo from slot
     const handleRemovePhoto = useCallback((index: number) => {
@@ -110,19 +141,19 @@ export default function Home() {
 
     // Reset all
     const handleReset = useCallback(() => {
-        setPhotos(Array(MAX_PHOTOS).fill(null));
-        setLivePhotos(Array(MAX_PHOTOS).fill(null));
+        setPhotos(Array(selectedPhotoCount).fill(null));
+        setLivePhotos(Array(selectedPhotoCount).fill(null));
         setMode('select');
         setGeneratedStrip(null);
         setError('');
-    }, []);
+    }, [selectedPhotoCount]);
 
     // Generate photostrip
     const handleGenerate = async () => {
         const validPhotos = photos.filter((p) => p !== null) as string[];
 
-        if (validPhotos.length !== MAX_PHOTOS) {
-            setError(`Please capture all ${MAX_PHOTOS} photos before generating.`);
+        if (validPhotos.length !== selectedPhotoCount) {
+            setError(`Please capture all ${selectedPhotoCount} photos before generating.`);
             return;
         }
 
@@ -130,10 +161,16 @@ export default function Home() {
         setError('');
 
         try {
+            const layoutMap: Record<2 | 3 | 4, 'vertical-2' | 'vertical-3' | 'vertical-4'> = {
+                2: 'vertical-2',
+                3: 'vertical-3',
+                4: 'vertical-4',
+            };
+            
             const canvas = await generatePhotostrip({
                 photos: validPhotos,
                 filter: selectedFilter,
-                layout: 'vertical-4',
+                layout: layoutMap[selectedPhotoCount],
                 background: selectedBackground,
             });
             setGeneratedStrip(canvas);
@@ -237,7 +274,7 @@ export default function Home() {
                                             <CameraCapture
                                                 onPhotoCapture={handlePhotoCapture}
                                                 capturedCount={photos.filter(Boolean).length}
-                                                maxPhotos={MAX_PHOTOS}
+                                                maxPhotos={selectedPhotoCount}
                                                 onError={setError}
                                             />
                                         )}
@@ -246,14 +283,14 @@ export default function Home() {
                                             <PhotoUpload
                                                 onPhotoUpload={handlePhotoUpload}
                                                 onError={setError}
-                                                maxPhotos={MAX_PHOTOS}
+                                                maxPhotos={selectedPhotoCount}
                                             />
                                         )}
                                     </div>
                                 </Card>
 
                                 <div className="flex justify-center gap-4">
-                                    {mode === 'camera' && currentSlot > 0 && currentSlot < MAX_PHOTOS && (
+                                    {mode === 'camera' && currentSlot > 0 && currentSlot < selectedPhotoCount && (
                                         <Button variant="outline" onClick={handleRetakeLast}>
                                             Retake Last
                                         </Button>
@@ -263,7 +300,7 @@ export default function Home() {
                                     </Button>
                                 </div>
 
-                                {/* Customization Controls (Moved here) */}
+                                {/* Customization Controls */}
                                 {allPhotosCaptured && (
                                     <div className="space-y-8 animate-fade-in pt-4">
                                         <div className="bg-white p-6 rounded-xl border border-stone-200 shadow-sm">
@@ -303,12 +340,21 @@ export default function Home() {
 
                             {/* Right Panel (Preview Only) */}
                             <div className="lg:col-span-5 xl:col-span-4 space-y-8">
+                                {/* Photo Count Selector - Near Live Preview */}
+                                <div className="bg-white p-6 rounded-xl border border-stone-200 shadow-sm">
+                                    <h3 className="text-lg font-serif font-medium mb-4">Number of Photos</h3>
+                                    <PhotoCountSelector
+                                        selectedCount={selectedPhotoCount}
+                                        onCountChange={handlePhotoCountChange}
+                                    />
+                                </div>
+
                                 <PhotostripPreview
                                     photos={photos}
                                     livePhotos={livePhotos}
-                                    currentSlot={currentSlot === -1 ? MAX_PHOTOS : currentSlot}
+                                    currentSlot={currentSlot === -1 ? selectedPhotoCount : currentSlot}
                                     onRemovePhoto={handleRemovePhoto}
-                                    maxPhotos={MAX_PHOTOS}
+                                    maxPhotos={selectedPhotoCount}
                                     filter={selectedFilter}
                                     background={selectedBackground}
                                 />

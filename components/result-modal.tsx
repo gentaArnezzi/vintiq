@@ -57,11 +57,19 @@ export default function ResultModal({
 
         setIsGeneratingVideo(true);
         try {
+            const validPhotos = photos.filter((p) => p !== null) as string[];
+            const photoCount = validPhotos.length as 2 | 3 | 4;
+            const layoutMap: Record<2 | 3 | 4, 'vertical-2' | 'vertical-3' | 'vertical-4'> = {
+                2: 'vertical-2',
+                3: 'vertical-3',
+                4: 'vertical-4',
+            };
+            
             const videoBlob = await generateLiveStripVideo({
-                photos,
+                photos: validPhotos,
                 livePhotos,
                 filter,
-                layout: 'vertical-4',
+                layout: layoutMap[photoCount],
                 background,
             });
             downloadVideo(videoBlob);
