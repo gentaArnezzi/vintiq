@@ -14,6 +14,7 @@ import ErrorMessage from '@/components/error-message';
 import BackgroundSelector from '@/components/background-selector';
 import PhotoCountSelector from '@/components/photo-count-selector';
 import LayoutSelector from '@/components/layout-selector';
+import VintageDecorations from '@/components/vintage-decorations';
 import { generatePhotostrip, type BackgroundStyle, type LayoutType } from '@/lib/canvas-generator';
 import type { FilterType } from '@/lib/image-filters';
 
@@ -217,19 +218,20 @@ export default function Home() {
     };
 
     return (
-        <div className="min-h-screen text-stone-800 font-sans selection:bg-stone-200">
-            <div className="max-w-6xl mx-auto px-4 py-12 md:py-20">
+        <div className="min-h-screen text-[#4A3F35] font-sans selection:bg-[#E8D5B7]/50 relative">
+            <VintageDecorations />
+            <div className="max-w-6xl mx-auto px-4 py-12 md:py-20 relative z-10">
 
                 {/* Header */}
                 <header className="text-center mb-16 animate-fade-in">
-                    <div className="inline-flex items-center justify-center gap-2 mb-4 px-4 py-1.5 rounded-full bg-white border border-stone-200 shadow-sm">
-                        <Sparkles className="w-4 h-4 text-vintage-gold" />
-                        <span className="text-xs font-medium tracking-wider uppercase text-stone-500">Online Photobooth</span>
+                    <div className="inline-flex items-center justify-center gap-2 mb-6 px-5 py-2 rounded-full bg-gradient-to-r from-[#F5E6D3] to-[#F0DDC4] border border-[#C9A882]/50 shadow-[0_2px_8px_rgba(74,63,53,0.1)]">
+                        <Sparkles className="w-4 h-4 text-[#D4AF37]" />
+                        <span className="text-xs font-serif font-medium tracking-wider uppercase text-[#6B5B4F]">Online Photobooth</span>
                     </div>
-                    <h1 className="text-5xl md:text-7xl font-serif font-medium text-stone-900 mb-6 tracking-tight">
+                    <h1 className="text-5xl md:text-7xl font-serif font-medium text-[#4A3F35] mb-6 tracking-tight drop-shadow-[0_2px_4px_rgba(74,63,53,0.1)]">
                         Vintiq Studio
                     </h1>
-                    <p className="text-lg text-stone-500 max-w-xl mx-auto font-light leading-relaxed">
+                    <p className="text-lg text-[#6B5B4F] max-w-xl mx-auto font-serif leading-relaxed">
                         Capture moments in timeless vintage style. No app required, just pure nostalgia.
                     </p>
                 </header>
@@ -241,40 +243,48 @@ export default function Home() {
                 {mode === 'select' && (
                     <div className="grid md:grid-cols-2 gap-6 max-w-3xl mx-auto animate-fade-in delay-100">
                         <Card
-                            className="group cursor-pointer hover:shadow-md transition-all duration-300 border-stone-200 hover:border-stone-300 bg-white/50 backdrop-blur-sm"
+                            className="group cursor-pointer hover:shadow-[0_8px_24px_rgba(74,63,53,0.15)] transition-all duration-300 border-2 border-[#C9A882]/40 hover:border-[#C9A882]/70 bg-gradient-to-br from-[#FDFBF7] to-[#F5E6D3] backdrop-blur-sm relative overflow-hidden"
                             onClick={() => setMode('camera')}
                         >
-                            <CardHeader className="text-center pt-10 pb-6">
-                                <div className="w-16 h-16 mx-auto bg-stone-100 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-500">
-                                    <Camera className="w-8 h-8 text-stone-700" />
+                            {/* Vintage corner decoration */}
+                            <div className="absolute top-0 right-0 w-12 h-12 border-t-2 border-r-2 border-[#8B7355]/20"></div>
+                            <div className="absolute bottom-0 left-0 w-12 h-12 border-b-2 border-l-2 border-[#8B7355]/20"></div>
+                            
+                            <CardHeader className="text-center pt-10 pb-6 relative z-10">
+                                <div className="w-16 h-16 mx-auto bg-gradient-to-br from-[#E8D5B7] to-[#D4AF37]/30 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-500 shadow-[0_4px_12px_rgba(74,63,53,0.15)]">
+                                    <Camera className="w-8 h-8 text-[#6B5B4F]" />
                                 </div>
-                                <CardTitle className="text-2xl mb-2">Use Camera</CardTitle>
-                                <CardDescription>
+                                <CardTitle className="text-2xl mb-2 font-serif text-[#4A3F35]">Use Camera</CardTitle>
+                                <CardDescription className="text-[#6B5B4F] font-serif">
                                     Take 4 photos sequentially with your webcam. Perfect for spontaneous selfies.
                                 </CardDescription>
                             </CardHeader>
-                            <CardContent className="text-center pb-10">
-                                <Button variant="vintage-outline" className="group-hover:bg-stone-900 group-hover:text-white transition-colors">
+                            <CardContent className="text-center pb-10 relative z-10">
+                                <Button className="group-hover:bg-[#4A3F35] group-hover:text-[#FDFBF7] transition-colors border-2 border-[#C9A882] bg-transparent text-[#6B5B4F] hover:border-[#4A3F35] font-serif">
                                     Start Session
                                 </Button>
                             </CardContent>
                         </Card>
 
                         <Card
-                            className="group cursor-pointer hover:shadow-md transition-all duration-300 border-stone-200 hover:border-stone-300 bg-white/50 backdrop-blur-sm"
+                            className="group cursor-pointer hover:shadow-[0_8px_24px_rgba(74,63,53,0.15)] transition-all duration-300 border-2 border-[#C9A882]/40 hover:border-[#C9A882]/70 bg-gradient-to-br from-[#FDFBF7] to-[#F5E6D3] backdrop-blur-sm relative overflow-hidden"
                             onClick={() => setMode('upload')}
                         >
-                            <CardHeader className="text-center pt-10 pb-6">
-                                <div className="w-16 h-16 mx-auto bg-stone-100 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-500">
-                                    <Upload className="w-8 h-8 text-stone-700" />
+                            {/* Vintage corner decoration */}
+                            <div className="absolute top-0 right-0 w-12 h-12 border-t-2 border-r-2 border-[#8B7355]/20"></div>
+                            <div className="absolute bottom-0 left-0 w-12 h-12 border-b-2 border-l-2 border-[#8B7355]/20"></div>
+                            
+                            <CardHeader className="text-center pt-10 pb-6 relative z-10">
+                                <div className="w-16 h-16 mx-auto bg-gradient-to-br from-[#E8D5B7] to-[#D4AF37]/30 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-500 shadow-[0_4px_12px_rgba(74,63,53,0.15)]">
+                                    <Upload className="w-8 h-8 text-[#6B5B4F]" />
                                 </div>
-                                <CardTitle className="text-2xl mb-2">Upload Photos</CardTitle>
-                                <CardDescription>
+                                <CardTitle className="text-2xl mb-2 font-serif text-[#4A3F35]">Upload Photos</CardTitle>
+                                <CardDescription className="text-[#6B5B4F] font-serif">
                                     Select 4 existing photos from your gallery. Ideal for curated memories.
                                 </CardDescription>
                             </CardHeader>
-                            <CardContent className="text-center pb-10">
-                                <Button variant="vintage-outline" className="group-hover:bg-stone-900 group-hover:text-white transition-colors">
+                            <CardContent className="text-center pb-10 relative z-10">
+                                <Button className="group-hover:bg-[#4A3F35] group-hover:text-[#FDFBF7] transition-colors border-2 border-[#C9A882] bg-transparent text-[#6B5B4F] hover:border-[#4A3F35] font-serif">
                                     Choose Files
                                 </Button>
                             </CardContent>
@@ -289,11 +299,11 @@ export default function Home() {
                             <Button
                                 variant="ghost"
                                 onClick={handleReset}
-                                className="text-stone-500 hover:text-stone-900"
+                                className="text-[#6B5B4F] hover:text-[#4A3F35] hover:bg-[#E8D5B7]/30 font-serif"
                             >
                                 ← Back to Home
                             </Button>
-                            <div className="text-sm font-medium text-stone-400 uppercase tracking-widest">
+                            <div className="text-sm font-serif font-medium text-[#6B5B4F]/70 uppercase tracking-widest">
                                 {mode === 'camera' ? 'Camera Session' : 'Upload Session'}
                             </div>
                         </div>
@@ -301,8 +311,10 @@ export default function Home() {
                         <div className="grid lg:grid-cols-12 gap-8 lg:gap-12">
                             {/* Left Panel */}
                             <div className="lg:col-span-7 xl:col-span-8 space-y-6">
-                                <Card className="overflow-hidden border-stone-200 shadow-sm bg-white">
-                                    <div className="p-6">
+                                <Card className="overflow-hidden border-2 border-[#C9A882]/40 shadow-[0_4px_12px_rgba(74,63,53,0.1)] bg-gradient-to-br from-[#FDFBF7] to-[#F5E6D3] relative">
+                                    {/* Vintage corner decoration */}
+                                    <div className="absolute top-0 right-0 w-8 h-8 border-t-2 border-r-2 border-[#8B7355]/20"></div>
+                                    <div className="p-6 relative z-10">
                                         {mode === 'camera' && (
                                             <CameraCapture
                                                 onPhotoCapture={handlePhotoCapture}
@@ -324,57 +336,75 @@ export default function Home() {
 
                                 <div className="flex justify-center gap-4">
                                     {mode === 'camera' && currentSlot > 0 && currentSlot < selectedPhotoCount && (
-                                        <Button variant="outline" onClick={handleRetakeLast}>
+                                        <Button 
+                                            variant="outline" 
+                                            onClick={handleRetakeLast}
+                                            className="border-[#C9A882] text-[#6B5B4F] hover:bg-[#E8D5B7]/30 hover:border-[#4A3F35] font-serif"
+                                        >
                                             Retake Last
                                         </Button>
                                     )}
-                                    <Button variant="ghost" onClick={handleReset} className="text-red-500 hover:text-red-600 hover:bg-red-50">
+                                    <Button 
+                                        variant="ghost" 
+                                        onClick={handleReset} 
+                                        className="text-[#8B7355] hover:text-[#6B5B4F] hover:bg-[#E8D5B7]/30 font-serif"
+                                    >
                                         Reset Session
                                     </Button>
                                 </div>
 
                                 {/* Customization Controls */}
                                 {allPhotosCaptured && (
-                                    <div className="space-y-8 animate-fade-in pt-4">
-                                        <div className="bg-white p-6 rounded-xl border border-stone-200 shadow-sm">
-                                            <h3 className="text-lg font-serif font-medium mb-4">1. Choose Filter</h3>
-                                            <FilterSelector
-                                                selectedFilter={selectedFilter}
-                                                onFilterChange={setSelectedFilter}
-                                            />
+                                    <div className="space-y-6 animate-fade-in pt-4">
+                                        <div className="bg-gradient-to-br from-[#FDFBF7] to-[#F5E6D3] p-6 rounded-xl border-2 border-[#C9A882]/40 shadow-[0_2px_8px_rgba(74,63,53,0.08)] relative overflow-hidden">
+                                            <div className="absolute top-0 right-0 w-6 h-6 border-t-2 border-r-2 border-[#8B7355]/20"></div>
+                                            <h3 className="text-lg font-serif font-medium mb-4 text-[#4A3F35] relative z-10">1. Choose Filter</h3>
+                                            <div className="relative z-10">
+                                                <FilterSelector
+                                                    selectedFilter={selectedFilter}
+                                                    onFilterChange={setSelectedFilter}
+                                                />
+                                            </div>
                                         </div>
 
-                                        <div className="bg-white p-6 rounded-xl border border-stone-200 shadow-sm">
-                                            <h3 className="text-lg font-serif font-medium mb-4">2. Choose Background</h3>
-                                            <BackgroundSelector
-                                                selectedBackground={selectedBackground}
-                                                onBackgroundChange={setSelectedBackground}
-                                            />
+                                        <div className="bg-gradient-to-br from-[#FDFBF7] to-[#F5E6D3] p-6 rounded-xl border-2 border-[#C9A882]/40 shadow-[0_2px_8px_rgba(74,63,53,0.08)] relative overflow-hidden">
+                                            <div className="absolute top-0 right-0 w-6 h-6 border-t-2 border-r-2 border-[#8B7355]/20"></div>
+                                            <h3 className="text-lg font-serif font-medium mb-4 text-[#4A3F35] relative z-10">2. Choose Background</h3>
+                                            <div className="relative z-10">
+                                                <BackgroundSelector
+                                                    selectedBackground={selectedBackground}
+                                                    onBackgroundChange={setSelectedBackground}
+                                                />
+                                            </div>
                                         </div>
 
-                                        <div className="bg-white p-6 rounded-xl border border-stone-200 shadow-sm">
-                                            <h3 className="text-lg font-serif font-medium mb-4">3. Choose Layout</h3>
-                                            <LayoutSelector
-                                                selectedLayout={selectedLayout}
-                                                onLayoutChange={handleLayoutChange}
-                                            />
+                                        <div className="bg-gradient-to-br from-[#FDFBF7] to-[#F5E6D3] p-6 rounded-xl border-2 border-[#C9A882]/40 shadow-[0_2px_8px_rgba(74,63,53,0.08)] relative overflow-hidden">
+                                            <div className="absolute top-0 right-0 w-6 h-6 border-t-2 border-r-2 border-[#8B7355]/20"></div>
+                                            <h3 className="text-lg font-serif font-medium mb-4 text-[#4A3F35] relative z-10">3. Choose Layout</h3>
+                                            <div className="relative z-10">
+                                                <LayoutSelector
+                                                    selectedLayout={selectedLayout}
+                                                    onLayoutChange={handleLayoutChange}
+                                                />
+                                            </div>
                                         </div>
 
-                                        <div className="bg-white p-6 rounded-xl border border-stone-200 shadow-sm">
-                                            <h3 className="text-lg font-serif font-medium mb-4">4. Add Caption (Optional)</h3>
-                                            <div className="flex gap-3">
+                                        <div className="bg-gradient-to-br from-[#FDFBF7] to-[#F5E6D3] p-6 rounded-xl border-2 border-[#C9A882]/40 shadow-[0_2px_8px_rgba(74,63,53,0.08)] relative overflow-hidden">
+                                            <div className="absolute top-0 right-0 w-6 h-6 border-t-2 border-r-2 border-[#8B7355]/20"></div>
+                                            <h3 className="text-lg font-serif font-medium mb-4 text-[#4A3F35] relative z-10">4. Add Caption (Optional)</h3>
+                                            <div className="flex gap-3 relative z-10">
                                                 <div className="relative flex-1">
-                                                    <Type className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
+                                                    <Type className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6B5B4F]/60" />
                                                     <Input
                                                         value={customText}
                                                         onChange={(e) => setCustomText(e.target.value)}
                                                         placeholder="Enter your name or message..."
-                                                        className="pl-10 border-stone-200 focus:ring-stone-400 focus:border-stone-400"
+                                                        className="pl-10 border-[#C9A882]/50 bg-white/80 focus:ring-[#D4AF37]/30 focus:border-[#C9A882] text-[#4A3F35] font-serif"
                                                         maxLength={30}
                                                     />
                                                 </div>
                                             </div>
-                                            <p className="text-xs text-stone-400 mt-2">
+                                            <p className="text-xs text-[#6B5B4F]/70 mt-2 font-serif relative z-10">
                                                 Replaces &quot;VINTIQ STUDIO&quot; with your custom text.
                                             </p>
                                         </div>
@@ -382,15 +412,15 @@ export default function Home() {
                                         <Button
                                             onClick={handleGenerate}
                                             disabled={isGenerating}
-                                            className="w-full h-16 text-xl bg-stone-900 hover:bg-stone-800 text-white font-medium rounded-xl shadow-lg shadow-stone-200 transition-all hover:shadow-xl hover:-translate-y-0.5"
+                                            className="w-full h-14 text-lg bg-gradient-to-r from-[#4A3F35] to-[#6B5B4F] hover:from-[#6B5B4F] hover:to-[#4A3F35] text-[#FDFBF7] font-serif font-medium rounded-xl shadow-[0_4px_16px_rgba(74,63,53,0.25)] transition-all hover:shadow-[0_6px_20px_rgba(74,63,53,0.35)] hover:-translate-y-0.5 disabled:opacity-50"
                                         >
                                             {isGenerating ? (
                                                 <span className="flex items-center gap-2">
-                                                    <RotateCcw className="w-6 h-6 animate-spin" /> Processing...
+                                                    <RotateCcw className="w-5 h-5 animate-spin" /> Processing...
                                                 </span>
                                             ) : (
                                                 <span className="flex items-center gap-2">
-                                                    Finalize & Download <ArrowRight className="w-6 h-6" />
+                                                    Finalize & Download <ArrowRight className="w-5 h-5" />
                                                 </span>
                                             )}
                                         </Button>
@@ -399,14 +429,17 @@ export default function Home() {
                             </div>
 
                             {/* Right Panel (Preview Only) */}
-                            <div className="lg:col-span-5 xl:col-span-4 space-y-8">
+                            <div className="lg:col-span-5 xl:col-span-4 space-y-6">
                                 {/* Photo Count Selector - Always visible now */}
-                                <div className="bg-white p-6 rounded-xl border border-stone-200 shadow-sm">
-                                    <h3 className="text-lg font-serif font-medium mb-4">Number of Photos</h3>
-                                    <PhotoCountSelector
-                                        selectedCount={selectedPhotoCount as 2 | 3 | 4}
-                                        onCountChange={(count) => handlePhotoCountChange(count)}
-                                    />
+                                <div className="bg-gradient-to-br from-[#FDFBF7] to-[#F5E6D3] p-6 rounded-xl border-2 border-[#C9A882]/40 shadow-[0_2px_8px_rgba(74,63,53,0.08)] relative overflow-hidden">
+                                    <div className="absolute top-0 right-0 w-6 h-6 border-t-2 border-r-2 border-[#8B7355]/20"></div>
+                                    <h3 className="text-lg font-serif font-medium mb-4 text-[#4A3F35] relative z-10">Number of Photos</h3>
+                                    <div className="relative z-10">
+                                        <PhotoCountSelector
+                                            selectedCount={selectedPhotoCount as 2 | 3 | 4}
+                                            onCountChange={(count) => handlePhotoCountChange(count)}
+                                        />
+                                    </div>
                                 </div>
 
                                 <PhotostripPreview

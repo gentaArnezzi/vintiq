@@ -49,6 +49,9 @@ const config: Config = {
                     gold: "#D4AF37",
                     sage: "#8A9A5B",
                     rust: "#C04000",
+                    yellow: "#E8D5B7",
+                    sepia: "#6B5B4F",
+                    brown: "#4A3F35",
                 }
             },
             borderRadius: {

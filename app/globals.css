@@ -88,6 +88,21 @@
   .vintage-gradient {
     background: linear-gradient(to bottom right, #FDFBF7, #F5F0E6);
   }
+
+  .vintage-card {
+    background: linear-gradient(to bottom right, #FDFBF7, #F5E6D3);
+    border: 2px solid rgba(201, 168, 130, 0.4);
+    box-shadow: 0 2px 8px rgba(74, 63, 53, 0.08);
+  }
+
+  .vintage-card-hover {
+    transition: all 0.3s ease;
+  }
+
+  .vintage-card-hover:hover {
+    box-shadow: 0 8px 24px rgba(74, 63, 53, 0.15);
+    border-color: rgba(201, 168, 130, 0.7);
+  }
 }
 
 /* Animations */
