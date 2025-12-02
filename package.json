@@ -18,7 +18,8 @@
     "next": "^15.0.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "tailwind-merge": "^3.4.0"
+    "tailwind-merge": "^3.4.0",
+    "vintagejs": "^2.2.0"
   },
   "devDependencies": {
     "@types/node": "^20",

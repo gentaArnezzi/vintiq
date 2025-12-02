@@ -1,5 +1,3 @@
-import vintagejs from 'vintagejs';
-
 export type FilterType =
     | 'vintiq-warm'
     | 'sepia-classic'
@@ -39,6 +37,7 @@ export interface FilterConfig {
  * Apply vintageJS effect to canvas
  * Helper function to use vintageJS library
  * Based on: https://github.com/rendro/vintageJS
+ * Uses dynamic import to avoid SSR issues
  */
 async function applyVintageJSEffect(
     ctx: CanvasRenderingContext2D,
@@ -49,6 +48,9 @@ async function applyVintageJSEffect(
     const canvas = ctx.canvas;
     
     try {
+        // Dynamic import to avoid SSR issues
+        const vintagejs = (await import('vintagejs')).default;
+        
         // Create a copy of the current canvas content
         const imageData = ctx.getImageData(0, 0, width, height);
         
