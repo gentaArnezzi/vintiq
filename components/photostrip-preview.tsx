@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { X, RotateCcw } from 'lucide-react';
-import { generatePhotostrip, type BackgroundStyle } from '@/lib/canvas-generator';
+import { generatePhotostrip, type BackgroundStyle, type LayoutType } from '@/lib/canvas-generator';
 import type { FilterType } from '@/lib/image-filters';
 import LivePhotoPreview from './live-photo-preview';
 import { applyFilter } from '@/lib/image-filters';
@@ -15,6 +15,8 @@ interface PhotostripPreviewProps {
     maxPhotos?: number;
     filter: FilterType;
     background: BackgroundStyle;
+    layout: LayoutType;
+    customText?: string;
 }
 
 export default function PhotostripPreview({
@@ -25,6 +27,8 @@ export default function PhotostripPreview({
     maxPhotos = 4,
     filter,
     background,
+    layout,
+    customText = '',
 }: PhotostripPreviewProps) {
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
     const [isGenerating, setIsGenerating] = useState(false);
@@ -36,17 +40,12 @@ export default function PhotostripPreview({
         const generate = async () => {
             setIsGenerating(true);
             try {
-                const layoutMap: Record<number, 'vertical-2' | 'vertical-3' | 'vertical-4'> = {
-                    2: 'vertical-2',
-                    3: 'vertical-3',
-                    4: 'vertical-4',
-                };
-                
                 const canvas = await generatePhotostrip({
                     photos,
                     filter,
-                    layout: layoutMap[maxPhotos] || 'vertical-4',
+                    layout,
                     background,
+                    customText
                 });
 
                 if (active) {
@@ -66,53 +65,146 @@ export default function PhotostripPreview({
             active = false;
             clearTimeout(timer);
         };
-    }, [photos, filter, background, maxPhotos]);
+    }, [photos, filter, background, maxPhotos, layout]);
 
     // Calculate overlay positions dynamically based on photo count
     // Constants: PHOTO_HEIGHT = 390px, PADDING_TOP = 60px, GAP = 30px, BOTTOM_SPACE = 120px
-    const calculateOverlayPositions = (count: number) => {
+    // Calculate overlay positions dynamically based on layout
+    const calculateOverlayPositions = (layout: LayoutType) => {
+        // Grid 2x2 Layout
+        if (layout === 'grid-2x2') {
+            const STRIP_WIDTH = 800;
+            const PHOTO_SIZE = 350;
+            const GAP = 30;
+            const PADDING = 40;
+            const BOTTOM_SPACE = 120;
+
+            // Determine how many photos based on maxPhotos
+            const photoCount = maxPhotos;
+            const cols = 2;
+            const rows = photoCount <= 2 ? 1 : 2;
+            const TOTAL_HEIGHT = PADDING + (PHOTO_SIZE * rows) + (GAP * (rows - 1)) + BOTTOM_SPACE;
+
+            return Array.from({ length: photoCount }, (_, i) => {
+                let x = 0;
+                let y = 0;
+
+                if (photoCount === 3) {
+                    // Special layout for 3 photos:
+                    // 0: Top Left
+                    // 1: Bottom Left  
+                    // 2: Right (Centered Vertically)
+                    if (i === 0) {
+                        x = PADDING;
+                        y = PADDING;
+                    } else if (i === 1) {
+                        x = PADDING;
+                        y = PADDING + PHOTO_SIZE + GAP;
+                    } else if (i === 2) {
+                        x = PADDING + PHOTO_SIZE + GAP;
+                        y = PADDING + (PHOTO_SIZE / 2) + (GAP / 2);
+                    }
+                } else {
+                    // Standard Grid (2 or 4)
+                    const col = i % cols;
+                    const row = Math.floor(i / cols);
+                    x = PADDING + col * (PHOTO_SIZE + GAP);
+                    y = PADDING + row * (PHOTO_SIZE + GAP);
+                }
+
+                const leftPercent = (x / STRIP_WIDTH) * 100;
+                const topPercent = (y / TOTAL_HEIGHT) * 100;
+                const widthPercent = (PHOTO_SIZE / STRIP_WIDTH) * 100;
+                const heightPercent = (PHOTO_SIZE / TOTAL_HEIGHT) * 100;
+
+                return {
+                    left: `${leftPercent.toFixed(1)}%`,
+                    top: `${topPercent.toFixed(1)}%`,
+                    width: `${widthPercent.toFixed(1)}%`,
+                    height: `${heightPercent.toFixed(1)}%`
+                };
+            });
+        }
+
+        // Polaroid Layout
+        if (layout === 'polaroid') {
+            const CARD_WIDTH = 600;
+            const PHOTO_WIDTH = 520;
+            const PHOTO_HEIGHT = 520;
+            const PADDING_TOP = 40;
+            const BOTTOM_SPACE = 160;
+            const TOTAL_HEIGHT = PADDING_TOP + PHOTO_HEIGHT + BOTTOM_SPACE;
+            const PADDING_X = (CARD_WIDTH - PHOTO_WIDTH) / 2;
+
+            // Only 1 photo for polaroid
+            const leftPercent = (PADDING_X / CARD_WIDTH) * 100;
+            const topPercent = (PADDING_TOP / TOTAL_HEIGHT) * 100;
+            const widthPercent = (PHOTO_WIDTH / CARD_WIDTH) * 100;
+            const heightPercent = (PHOTO_HEIGHT / TOTAL_HEIGHT) * 100;
+
+            return [{
+                left: `${leftPercent.toFixed(1)}%`,
+                top: `${topPercent.toFixed(1)}%`,
+                width: `${widthPercent.toFixed(1)}%`,
+                height: `${heightPercent.toFixed(1)}%`
+            }];
+        }
+
+        // Vertical Strip Layouts
+        const count = layout === 'vertical-2' ? 2 : layout === 'vertical-3' ? 3 : 4;
+        const STRIP_WIDTH = 600;
+        const PHOTO_WIDTH = 520;
         const PHOTO_HEIGHT = 390;
         const PADDING_TOP = 60;
         const GAP = 30;
         const BOTTOM_SPACE = 120;
         const totalHeight = PADDING_TOP + (PHOTO_HEIGHT * count) + (GAP * (count - 1)) + BOTTOM_SPACE;
-        
+        const PADDING_X = (STRIP_WIDTH - PHOTO_WIDTH) / 2;
+
+        const leftPercent = (PADDING_X / STRIP_WIDTH) * 100;
+        const widthPercent = (PHOTO_WIDTH / STRIP_WIDTH) * 100;
+
         return Array.from({ length: count }, (_, i) => {
             const photoTop = PADDING_TOP + i * (PHOTO_HEIGHT + GAP);
             const topPercent = (photoTop / totalHeight) * 100;
             const heightPercent = (PHOTO_HEIGHT / totalHeight) * 100;
-            return { top: `${topPercent.toFixed(1)}%`, height: `${heightPercent.toFixed(1)}%` };
+            return {
+                left: `${leftPercent.toFixed(1)}%`,
+                top: `${topPercent.toFixed(1)}%`,
+                width: `${widthPercent.toFixed(1)}%`,
+                height: `${heightPercent.toFixed(1)}%`
+            };
         });
     };
 
-    const overlayPositions = calculateOverlayPositions(maxPhotos);
+    const overlayPositions = calculateOverlayPositions(layout);
 
     // Map filter type to CSS filter string for video preview
     // Updated to match pixel-based filters more closely
     const getFilterStyle = (type: FilterType): string => {
         switch (type) {
-            case 'vintiq-warm': 
+            case 'vintiq-warm':
                 // Red boost, blue reduce, warm overlay
                 return 'sepia(0.15) saturate(1.15) brightness(1.08) contrast(0.95)';
-            case 'sepia-classic': 
+            case 'sepia-classic':
                 // Traditional sepia
                 return 'sepia(0.8) contrast(0.9)';
-            case 'mono-film': 
+            case 'mono-film':
                 // Grayscale with contrast
                 return 'grayscale(1) contrast(1.1)';
-            case 'polaroid-fade': 
+            case 'polaroid-fade':
                 // Fade with blue tint
                 return 'brightness(1.1) contrast(0.9) saturate(0.85) hue-rotate(5deg)';
-            case 'kodak-gold': 
+            case 'kodak-gold':
                 // Warm yellow tones
                 return 'sepia(0.1) saturate(1.2) brightness(1.05) contrast(1.05)';
-            case 'fuji-superia': 
+            case 'fuji-superia':
                 // Cool greens and magenta
                 return 'saturate(1.1) hue-rotate(-8deg) contrast(1.02)';
-            case 'drama-bw': 
+            case 'drama-bw':
                 // High contrast B&W
                 return 'grayscale(1) contrast(1.3) brightness(1.05)';
-            case 'cinematic-cool': 
+            case 'cinematic-cool':
                 // Teal and orange
                 return 'saturate(1.15) hue-rotate(-5deg) contrast(1.1) brightness(1.05)';
             default: return '';
@@ -151,8 +243,13 @@ export default function PhotostripPreview({
                                     return (
                                         <div
                                             key={index}
-                                            style={{ top: pos.top, height: pos.height }}
-                                            className="absolute left-[6.6%] right-[6.6%] group cursor-pointer"
+                                            style={{
+                                                top: pos.top,
+                                                height: pos.height,
+                                                left: pos.left,
+                                                width: pos.width
+                                            }}
+                                            className="absolute group cursor-pointer"
                                         >
                                             {/* Live Photo Overlay */}
                                             {livePhoto && (

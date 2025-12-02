@@ -15,6 +15,8 @@ interface ResultModalProps {
     photos?: (string | null)[];
     filter?: FilterType;
     background?: BackgroundStyle;
+    layout?: 'vertical-2' | 'vertical-3' | 'vertical-4' | 'grid-2x2' | 'polaroid';
+    customText?: string;
 }
 
 export default function ResultModal({
@@ -25,6 +27,8 @@ export default function ResultModal({
     photos = [],
     filter = 'vintiq-warm',
     background = 'classic-cream',
+    layout = 'vertical-4',
+    customText = '',
 }: ResultModalProps) {
     const displayCanvasRef = useRef<HTMLCanvasElement>(null);
     const [isGeneratingVideo, setIsGeneratingVideo] = useState(false);
@@ -64,13 +68,14 @@ export default function ResultModal({
                 3: 'vertical-3',
                 4: 'vertical-4',
             };
-            
+
             const videoBlob = await generateLiveStripVideo({
                 photos: validPhotos,
                 livePhotos,
                 filter,
-                layout: layoutMap[photoCount],
+                layout: layout, // Use the actual layout passed from parent
                 background,
+                customText,
             });
             downloadVideo(videoBlob);
         } catch (error) {

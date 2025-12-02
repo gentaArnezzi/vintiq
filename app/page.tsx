@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { Camera, Upload, Sparkles, ArrowRight, RotateCcw, Download } from 'lucide-react';
+import { Camera, Upload, Sparkles, ArrowRight, RotateCcw, Download, Type } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import CameraCapture, { type CapturedPhoto } from '@/components/camera-capture';
 import PhotoUpload from '@/components/photo-upload';
@@ -12,21 +13,29 @@ import ResultModal from '@/components/result-modal';
 import ErrorMessage from '@/components/error-message';
 import BackgroundSelector from '@/components/background-selector';
 import PhotoCountSelector from '@/components/photo-count-selector';
-import { generatePhotostrip, type BackgroundStyle } from '@/lib/canvas-generator';
+import LayoutSelector from '@/components/layout-selector';
+import { generatePhotostrip, type BackgroundStyle, type LayoutType } from '@/lib/canvas-generator';
 import type { FilterType } from '@/lib/image-filters';
 
 type PhotoMode = 'select' | 'camera' | 'upload';
 
 export default function Home() {
     const [mode, setMode] = useState<PhotoMode>('select');
-    const [selectedPhotoCount, setSelectedPhotoCount] = useState<2 | 3 | 4>(4);
+    const [selectedPhotoCount, setSelectedPhotoCount] = useState<1 | 2 | 3 | 4>(4);
+    // Track previous photo count when switching to Polaroid (to restore when switching back)
+    const [previousPhotoCount, setPreviousPhotoCount] = useState<2 | 3 | 4>(4);
+    // Always maintain 4 slots to preserve photos when switching layouts
     const [photos, setPhotos] = useState<(string | null)[]>(Array(4).fill(null));
     const [livePhotos, setLivePhotos] = useState<(Blob | null)[]>(Array(4).fill(null));
     const [selectedFilter, setSelectedFilter] = useState<FilterType>('vintiq-warm');
     const [selectedBackground, setSelectedBackground] = useState<BackgroundStyle>('classic-cream');
+    const [selectedLayout, setSelectedLayout] = useState<LayoutType>('vertical-4');
+    const [customText, setCustomText] = useState('');
     const [isGenerating, setIsGenerating] = useState(false);
     const [generatedStrip, setGeneratedStrip] = useState<HTMLCanvasElement | null>(null);
     const [error, setError] = useState<string>('');
+
+
 
     const currentSlot = photos.findIndex((p) => p === null);
     const allPhotosCaptured = currentSlot === -1 || currentSlot >= selectedPhotoCount;
@@ -35,7 +44,7 @@ export default function Home() {
     // IMPORTANT: Use the same index for both photos and livePhotos to maintain order
     const handlePhotoCapture = useCallback((photo: CapturedPhoto) => {
         let capturedIndex = -1;
-        
+
         setPhotos((prev) => {
             const newPhotos = [...prev];
             const emptyIndex = newPhotos.findIndex((p) => p === null);
@@ -58,34 +67,18 @@ export default function Home() {
     }, []);
 
     // Handle photo count change
-    const handlePhotoCountChange = useCallback((count: 2 | 3 | 4) => {
+    const handlePhotoCountChange = useCallback((count: 1 | 2 | 3 | 4) => {
         setSelectedPhotoCount(count);
-        
-        setPhotos((prev) => {
-            const newPhotos = [...prev];
-            // Trim if new count is smaller
-            if (count < newPhotos.length) {
-                return newPhotos.slice(0, count);
-            }
-            // Extend if new count is larger
-            if (count > newPhotos.length) {
-                return [...newPhotos, ...Array(count - newPhotos.length).fill(null)];
-            }
-            return newPhotos;
-        });
-        
-        setLivePhotos((prev) => {
-            const newLivePhotos = [...prev];
-            // Trim if new count is smaller
-            if (count < newLivePhotos.length) {
-                return newLivePhotos.slice(0, count);
-            }
-            // Extend if new count is larger
-            if (count > newLivePhotos.length) {
-                return [...newLivePhotos, ...Array(count - newLivePhotos.length).fill(null)];
-            }
-            return newLivePhotos;
-        });
+
+        // Update layout if it's a strip
+        if (count === 2 || count === 3 || count === 4) {
+            setSelectedLayout(`vertical-${count}` as LayoutType);
+        } else if (count === 1) {
+            setSelectedLayout('polaroid');
+        }
+
+        // We no longer resize the photos array here to preserve data
+        // The display logic will slice the array based on selectedPhotoCount
     }, []);
 
     // Handle photo upload
@@ -96,7 +89,13 @@ export default function Home() {
                 newPhotos[index] = url;
             }
         });
+        // Fill the rest with nulls up to 4 to maintain fixed size
+        while (newPhotos.length < 4) {
+            newPhotos.push(null);
+        }
         setPhotos(newPhotos);
+        // Clear live photos as uploads don't have them
+        setLivePhotos(Array(4).fill(null));
     }, [selectedPhotoCount]);
 
     // Remove photo from slot
@@ -139,18 +138,57 @@ export default function Home() {
         });
     }, []);
 
+    const handleLayoutChange = (layout: LayoutType) => {
+        if (layout === 'polaroid') {
+            // Polaroid is strictly 1 photo
+            // Save current photo count before switching to Polaroid (if not already 1)
+            if (selectedPhotoCount !== 1) {
+                setPreviousPhotoCount(selectedPhotoCount as 2 | 3 | 4);
+                handlePhotoCountChange(1);
+            }
+            setSelectedLayout('polaroid');
+        } else if (layout === 'vertical-4' || layout.startsWith('vertical-')) {
+            // For Strip layouts, respect the current photo count
+            // If coming from Polaroid (1 photo), restore previous count
+            if (selectedPhotoCount === 1) {
+                setSelectedLayout(`vertical-${previousPhotoCount}` as LayoutType);
+                handlePhotoCountChange(previousPhotoCount);
+            } else {
+                // Use the current photo count (2, 3, or 4)
+                setSelectedLayout(`vertical-${selectedPhotoCount}` as LayoutType);
+            }
+        } else if (layout === 'grid-2x2') {
+            // For Grid, keep current photo count
+            // If coming from Polaroid (1 photo), restore previous count
+            if (selectedPhotoCount === 1) {
+                handlePhotoCountChange(previousPhotoCount);
+            }
+            setSelectedLayout('grid-2x2');
+        } else {
+            // Fallback for any other layouts
+            setSelectedLayout(layout);
+        }
+    };
+
     // Reset all
     const handleReset = useCallback(() => {
-        setPhotos(Array(selectedPhotoCount).fill(null));
-        setLivePhotos(Array(selectedPhotoCount).fill(null));
+        setPhotos(Array(4).fill(null));
+        setLivePhotos(Array(4).fill(null));
         setMode('select');
         setGeneratedStrip(null);
         setError('');
-    }, [selectedPhotoCount]);
+        setSelectedPhotoCount(4); // Reset photo count to default
+        setSelectedLayout('vertical-4'); // Reset layout to default
+        setSelectedFilter('vintiq-warm'); // Reset filter to default
+        setSelectedBackground('classic-cream'); // Reset background to default
+        setCustomText(''); // Reset custom text
+    }, []);
 
     // Generate photostrip
     const handleGenerate = async () => {
-        const validPhotos = photos.filter((p) => p !== null) as string[];
+        // Only consider photos within the selected count
+        const activePhotos = photos.slice(0, selectedPhotoCount);
+        const validPhotos = activePhotos.filter((p) => p !== null) as string[];
 
         if (validPhotos.length !== selectedPhotoCount) {
             setError(`Please capture all ${selectedPhotoCount} photos before generating.`);
@@ -161,17 +199,12 @@ export default function Home() {
         setError('');
 
         try {
-            const layoutMap: Record<2 | 3 | 4, 'vertical-2' | 'vertical-3' | 'vertical-4'> = {
-                2: 'vertical-2',
-                3: 'vertical-3',
-                4: 'vertical-4',
-            };
-            
             const canvas = await generatePhotostrip({
                 photos: validPhotos,
                 filter: selectedFilter,
-                layout: layoutMap[selectedPhotoCount],
+                layout: selectedLayout,
                 background: selectedBackground,
+                customText: customText,
             });
             setGeneratedStrip(canvas);
         } catch (err) {
@@ -319,6 +352,33 @@ export default function Home() {
                                             />
                                         </div>
 
+                                        <div className="bg-white p-6 rounded-xl border border-stone-200 shadow-sm">
+                                            <h3 className="text-lg font-serif font-medium mb-4">3. Choose Layout</h3>
+                                            <LayoutSelector
+                                                selectedLayout={selectedLayout}
+                                                onLayoutChange={handleLayoutChange}
+                                            />
+                                        </div>
+
+                                        <div className="bg-white p-6 rounded-xl border border-stone-200 shadow-sm">
+                                            <h3 className="text-lg font-serif font-medium mb-4">4. Add Caption (Optional)</h3>
+                                            <div className="flex gap-3">
+                                                <div className="relative flex-1">
+                                                    <Type className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
+                                                    <Input
+                                                        value={customText}
+                                                        onChange={(e) => setCustomText(e.target.value)}
+                                                        placeholder="Enter your name or message..."
+                                                        className="pl-10 border-stone-200 focus:ring-stone-400 focus:border-stone-400"
+                                                        maxLength={30}
+                                                    />
+                                                </div>
+                                            </div>
+                                            <p className="text-xs text-stone-400 mt-2">
+                                                Replaces &quot;VINTIQ STUDIO&quot; with your custom text.
+                                            </p>
+                                        </div>
+
                                         <Button
                                             onClick={handleGenerate}
                                             disabled={isGenerating}
@@ -340,23 +400,25 @@ export default function Home() {
 
                             {/* Right Panel (Preview Only) */}
                             <div className="lg:col-span-5 xl:col-span-4 space-y-8">
-                                {/* Photo Count Selector - Near Live Preview */}
+                                {/* Photo Count Selector - Always visible now */}
                                 <div className="bg-white p-6 rounded-xl border border-stone-200 shadow-sm">
                                     <h3 className="text-lg font-serif font-medium mb-4">Number of Photos</h3>
                                     <PhotoCountSelector
-                                        selectedCount={selectedPhotoCount}
-                                        onCountChange={handlePhotoCountChange}
+                                        selectedCount={selectedPhotoCount as 2 | 3 | 4}
+                                        onCountChange={(count) => handlePhotoCountChange(count)}
                                     />
                                 </div>
 
                                 <PhotostripPreview
-                                    photos={photos}
-                                    livePhotos={livePhotos}
+                                    photos={photos.slice(0, selectedPhotoCount)}
+                                    livePhotos={livePhotos.slice(0, selectedPhotoCount)}
                                     currentSlot={currentSlot === -1 ? selectedPhotoCount : currentSlot}
                                     onRemovePhoto={handleRemovePhoto}
                                     maxPhotos={selectedPhotoCount}
                                     filter={selectedFilter}
                                     background={selectedBackground}
+                                    layout={selectedLayout}
+                                    customText={customText}
                                 />
                             </div>
                         </div>
@@ -374,6 +436,8 @@ export default function Home() {
                     photos={photos}
                     filter={selectedFilter}
                     background={selectedBackground}
+                    layout={selectedLayout}
+                    customText={customText}
                 />
             )}
         </div>

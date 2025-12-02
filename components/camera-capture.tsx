@@ -41,6 +41,25 @@ export default function CameraCapture({
     const [flashActive, setFlashActive] = useState(false);
     const [livePhotoEnabled, setLivePhotoEnabled] = useState(true);
     const [isGeneratingVideo, setIsGeneratingVideo] = useState(false);
+    const [currentPrompt, setCurrentPrompt] = useState<string | null>(null);
+
+    const POSE_PROMPTS = [
+        "Silly Face! 🤪",
+        "Look Left! 👈",
+        "Look Right! 👉",
+        "Big Smile! 😁",
+        "Surprised! 😲",
+        "Serious Mode 😐",
+        "Peace Sign ✌️",
+        "Heart Hands 🫶",
+        "Duck Face 😚",
+        "Wink! 😉",
+        "Tongue Out! 😛",
+        "Thinker 🤔",
+        "Cool 😎",
+        "Scared! 😱",
+        "Sleepy 😴"
+    ];
 
     // Check browser support
     useEffect(() => {
@@ -132,6 +151,9 @@ export default function CameraCapture({
     // Handle photo capture with countdown
     const handleCapture = () => {
         if (countdown !== null) return;
+        // Pick a random prompt
+        const randomPrompt = POSE_PROMPTS[Math.floor(Math.random() * POSE_PROMPTS.length)];
+        setCurrentPrompt(randomPrompt);
         setCountdown(3);
     };
 
@@ -198,6 +220,7 @@ export default function CameraCapture({
 
         capturePhoto();
         setCountdown(null);
+        setCurrentPrompt(null);
     }, [countdown, onPhotoCapture, onError, livePhotoEnabled]);
 
     // Keyboard shortcut
@@ -239,10 +262,19 @@ export default function CameraCapture({
                     )}
 
                     {countdown !== null && (
-                        <div className="absolute inset-0 flex items-center justify-center bg-black/40 backdrop-blur-[2px] z-20">
-                            <div className="text-white text-9xl font-serif font-light animate-pulse drop-shadow-2xl">
+                        <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/40 backdrop-blur-[2px] z-20">
+                            <div className="text-white text-9xl font-serif font-light animate-pulse drop-shadow-2xl mb-4">
                                 {countdown}
                             </div>
+                            {currentPrompt && (
+                                <div className="bg-white/90 text-stone-900 px-6 py-3 rounded-full text-2xl font-bold animate-bounce shadow-lg transform rotate-[-2deg]">
+                                    {currentPrompt}
+                                </div>
+                            )}
+                            {/* Visual Timer Bar */}
+                            <div className="absolute bottom-0 left-0 h-2 bg-yellow-400 transition-all duration-1000 ease-linear"
+                                style={{ width: `${(countdown / 3) * 100}%` }}
+                            />
                         </div>
                     )}
 
@@ -271,8 +303,8 @@ export default function CameraCapture({
                     <button
                         onClick={() => setLivePhotoEnabled(!livePhotoEnabled)}
                         className={`group/live flex items-center gap-2 px-3 py-1.5 rounded-full backdrop-blur-sm transition-all duration-200 ${livePhotoEnabled
-                                ? 'bg-yellow-500/90 hover:bg-yellow-600/90'
-                                : 'bg-stone-800/80 hover:bg-stone-700/80'
+                            ? 'bg-yellow-500/90 hover:bg-yellow-600/90'
+                            : 'bg-stone-800/80 hover:bg-stone-700/80'
                             }`}
                         title={livePhotoEnabled ? 'Live Photo On' : 'Live Photo Off'}
                     >
