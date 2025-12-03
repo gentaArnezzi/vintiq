@@ -30,6 +30,7 @@ const BACKGROUNDS: { id: BackgroundStyle; name: string; class: string }[] = [
     { id: 'vintage-brown-brick', name: 'Brick Wall', class: 'bg-[#a0462d]' },
     { id: 'christmas-theme', name: 'Christmas Theme', class: 'bg-gradient-to-br from-[#1a1a2e] via-[#16213e] to-[#0f3460]' },
     { id: 'christmas-red-theme', name: 'Christmas Red', class: 'bg-gradient-to-br from-[#7a0f0f] via-[#8b1a1a] to-[#6b0a0a]' },
+    { id: 'pilates-theme', name: 'Pilates Theme', class: 'bg-gradient-to-br from-[#fce4ec] via-[#f8bbd0] to-[#f48fb1]' },
 ];
 
 export default function BackgroundSelector({
@@ -69,7 +70,7 @@ export default function BackgroundSelector({
                         {/* Background Preview */}
                         <div className={cn("absolute inset-0", bg.class)} />
 
-                        {/* Christmas Stickers Preview - only for Christmas themes */}
+                        {/* Stickers Preview - only for themed backgrounds */}
                         {(bg.id === 'christmas-theme' || bg.id === 'christmas-red-theme') && (
                             <>
                                 {/* Small stickers in corners */}
@@ -111,6 +112,33 @@ export default function BackgroundSelector({
                                     <path d="M10 0 L10 4 M10 16 L10 20 M0 10 L4 10 M16 10 L20 10 M2.93 2.93 L5.66 5.66 M14.34 14.34 L17.07 17.07 M2.93 17.07 L5.66 14.34 M14.34 5.66 L17.07 2.93" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
                                     <circle cx="10" cy="10" r="1" fill="currentColor"/>
                                 </svg>
+                            </>
+                        )}
+
+                        {/* Pilates Stickers Preview - only for Pilates theme */}
+                        {bg.id === 'pilates-theme' && (
+                            <>
+                                {/* Small stickers in corners */}
+                                <img 
+                                    src="/pilates1.png" 
+                                    alt="" 
+                                    className="absolute top-0.5 right-0.5 w-5 h-5 opacity-90 object-contain"
+                                />
+                                <img 
+                                    src="/pilates2.png" 
+                                    alt="" 
+                                    className="absolute top-0.5 left-0.5 w-5 h-5 opacity-90 object-contain"
+                                />
+                                <img 
+                                    src="/pilates3.png" 
+                                    alt="" 
+                                    className="absolute bottom-0.5 right-0.5 w-5 h-5 opacity-90 object-contain"
+                                />
+                                <img 
+                                    src="/pilates4.png" 
+                                    alt="" 
+                                    className="absolute bottom-0.5 left-0.5 w-5 h-5 opacity-90 object-contain"
+                                />
                             </>
                         )}
 

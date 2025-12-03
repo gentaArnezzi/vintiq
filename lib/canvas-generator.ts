@@ -22,7 +22,8 @@ export type BackgroundStyle =
     | 'vintage-brown-textured'
     | 'vintage-brown-brick'
     | 'christmas-theme'
-    | 'christmas-red-theme';
+    | 'christmas-red-theme'
+    | 'pilates-theme';
 
 interface GenerateOptions {
     photos: (string | null)[];
@@ -161,6 +162,11 @@ export async function generatePhotostrip({
         await drawChristmasOverlay(ctx, STRIP_WIDTH, STRIP_HEIGHT, background);
     }
 
+    // 3.6. Draw Pilates overlay elements (stickers on top layer)
+    if (background === 'pilates-theme') {
+        await drawPilatesOverlay(ctx, STRIP_WIDTH, STRIP_HEIGHT, background);
+    }
+
     // 4. Draw Branding
     drawBranding(ctx, STRIP_WIDTH, STRIP_HEIGHT, background, customText);
 
@@ -286,6 +292,11 @@ async function generateGridLayout(
         await drawChristmasOverlay(ctx, STRIP_WIDTH, STRIP_HEIGHT, background);
     }
 
+    // 3.6. Draw Pilates overlay elements (stickers on top layer)
+    if (background === 'pilates-theme') {
+        await drawPilatesOverlay(ctx, STRIP_WIDTH, STRIP_HEIGHT, background);
+    }
+
     // 4. Draw Branding
     drawBranding(ctx, STRIP_WIDTH, STRIP_HEIGHT, background, customText);
 
@@ -381,6 +392,11 @@ async function generatePolaroidLayout(
     // 3.5. Draw Christmas overlay elements (snowflakes and stickers on top layer)
     if (background === 'christmas-theme' || background === 'christmas-red-theme') {
         await drawChristmasOverlay(ctx, CARD_WIDTH, CARD_HEIGHT, background);
+    }
+
+    // 3.6. Draw Pilates overlay elements (stickers on top layer)
+    if (background === 'pilates-theme') {
+        await drawPilatesOverlay(ctx, CARD_WIDTH, CARD_HEIGHT, background);
     }
 
     // 4. Draw Branding (smaller/subtle for polaroid)
@@ -565,6 +581,17 @@ async function drawBackground(
             ctx.fillStyle = christmasRedGradient;
             ctx.fillRect(0, 0, width, height);
             // Snowflakes and stickers are drawn in overlay layer after photos
+            break;
+        case 'pilates-theme':
+            // Pilates theme background with pink gradient (elements drawn in overlay layer above photos)
+            // Create soft pink gradient background
+            const pilatesGradient = ctx.createLinearGradient(0, 0, width, height);
+            pilatesGradient.addColorStop(0, '#fce4ec');
+            pilatesGradient.addColorStop(0.5, '#f8bbd0');
+            pilatesGradient.addColorStop(1, '#f48fb1');
+            ctx.fillStyle = pilatesGradient;
+            ctx.fillRect(0, 0, width, height);
+            // Pilates stickers are drawn in overlay layer after photos
             break;
         case 'classic-cream':
         default:
@@ -2071,6 +2098,18 @@ async function drawChristmasOverlay(ctx: CanvasRenderingContext2D, width: number
     ctx.restore();
 }
 
+// Draw Pilates overlay elements on top of photos (stickers)
+async function drawPilatesOverlay(ctx: CanvasRenderingContext2D, width: number, height: number, background: BackgroundStyle) {
+    if (background !== 'pilates-theme') return;
+    
+    ctx.save();
+    
+    // Draw pilates stickers on border areas and can overlap photos
+    await drawPilatesStickersOverlay(ctx, width, height);
+    
+    ctx.restore();
+}
+
 // Draw snowflakes overlay (on top layer, can overlap photos)
 function drawSnowflakesOverlay(ctx: CanvasRenderingContext2D, width: number, height: number) {
     ctx.save();
@@ -2192,6 +2231,68 @@ async function drawChristmasStickersOverlay(ctx: CanvasRenderingContext2D, width
     const positions: Record<string, { xPercent: number; yPercent: number; rotation: number; size: number }> = {
         'top-left': { xPercent: 0.05, yPercent: 0.08, rotation: -0.15, size: baseSize },
         'top-right': { xPercent: 0.92, yPercent: 0.05, rotation: 0.2, size: baseSize * 0.95 },
+        'bottom-left': { xPercent: 0.03, yPercent: 0.88, rotation: 0.12, size: baseSize * 1.1 },
+        'bottom-right': { xPercent: 0.90, yPercent: 0.90, rotation: -0.18, size: baseSize * 0.9 }
+    };
+    
+    // Draw each sticker at fixed position
+    for (const { img, position } of stickerImages) {
+        if (!img) continue;
+        
+        const posConfig = positions[position];
+        if (!posConfig) continue;
+        
+        // Calculate fixed position based on percentages
+        const x = width * posConfig.xPercent;
+        const y = height * posConfig.yPercent;
+        
+        // Scale image to fixed size
+        const scale = posConfig.size / Math.max(img.width, img.height);
+        const scaledWidth = img.width * scale;
+        const scaledHeight = img.height * scale;
+        
+        // Draw sticker with fixed rotation and opacity
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(posConfig.rotation);
+        ctx.globalAlpha = 1.0; // Full opacity - very visible
+        ctx.drawImage(img, -scaledWidth / 2, -scaledHeight / 2, scaledWidth, scaledHeight);
+        ctx.restore();
+    }
+    
+    ctx.restore();
+}
+
+// Draw Pilates stickers overlay (on top layer, can overlap photos)
+async function drawPilatesStickersOverlay(ctx: CanvasRenderingContext2D, width: number, height: number) {
+    const stickerConfigs = [
+        { path: '/pilates1.png', position: 'top-right' },
+        { path: '/pilates2.png', position: 'top-left' },
+        { path: '/pilates3.png', position: 'bottom-right' },
+        { path: '/pilates4.png', position: 'bottom-left' }
+    ];
+    
+    // Load all sticker images
+    const stickerImages: { img: HTMLImageElement | null; position: string }[] = [];
+    for (const config of stickerConfigs) {
+        try {
+            const img = await loadImage(config.path);
+            stickerImages.push({ img, position: config.position });
+        } catch (error) {
+            console.warn(`Failed to load sticker: ${config.path}`, error);
+            stickerImages.push({ img: null, position: config.position });
+        }
+    }
+    
+    ctx.save();
+    
+    // Fixed size for stickers (consistent every time)
+    const baseSize = 220; // Base size in pixels (larger for better visibility)
+    
+    // Fixed positions for each sticker (percentages of canvas dimensions) - same as Christmas
+    const positions: Record<string, { xPercent: number; yPercent: number; rotation: number; size: number }> = {
+        'top-left': { xPercent: 0.05, yPercent: 0.08, rotation: -0.15, size: baseSize },
+        'top-right': { xPercent: 0.92, yPercent: 0.12, rotation: 0.2, size: baseSize * 0.95 },
         'bottom-left': { xPercent: 0.03, yPercent: 0.88, rotation: 0.12, size: baseSize * 1.1 },
         'bottom-right': { xPercent: 0.90, yPercent: 0.90, rotation: -0.18, size: baseSize * 0.9 }
     };
@@ -2394,16 +2495,10 @@ export async function generateLiveStripVideo({
             // Wait a bit for videos to start playing
             await new Promise(resolve => setTimeout(resolve, 100));
 
-            // Pre-load Christmas sticker images if needed (for overlay on top layer)
+            // Pre-load sticker images if needed (for overlay on top layer)
             let preloadedStickers: { img: HTMLImageElement; position: string; config: { xPercent: number; yPercent: number; rotation: number; size: number } }[] = [];
+            
             if (background === 'christmas-theme' || background === 'christmas-red-theme') {
-                const stickerConfigs = [
-                    { path: '/christmas1.png', position: 'top-left' },
-                    { path: '/christmast2.png', position: 'top-right' },
-                    { path: '/christmast3.png', position: 'bottom-left' },
-                    { path: '/christmast4.png', position: 'bottom-right' }
-                ];
-                
                 const baseSize = 120;
                 const positions: Record<string, { xPercent: number; yPercent: number; rotation: number; size: number }> = {
                     'top-left': { xPercent: 0.05, yPercent: 0.08, rotation: -0.15, size: baseSize },
@@ -2411,6 +2506,40 @@ export async function generateLiveStripVideo({
                     'bottom-left': { xPercent: 0.03, yPercent: 0.88, rotation: 0.12, size: baseSize * 1.1 },
                     'bottom-right': { xPercent: 0.90, yPercent: 0.90, rotation: -0.18, size: baseSize * 0.9 }
                 };
+                
+                const stickerConfigs = [
+                    { path: '/christmas1.png', position: 'top-left' },
+                    { path: '/christmast2.png', position: 'top-right' },
+                    { path: '/christmast3.png', position: 'bottom-left' },
+                    { path: '/christmast4.png', position: 'bottom-right' }
+                ];
+
+                for (const config of stickerConfigs) {
+                    try {
+                        const img = await loadImage(config.path);
+                        const posConfig = positions[config.position];
+                        if (posConfig) {
+                            preloadedStickers.push({ img, position: config.position, config: posConfig });
+                        }
+                    } catch (error) {
+                        console.warn(`Failed to load sticker: ${config.path}`, error);
+                    }
+                }
+            } else if (background === 'pilates-theme') {
+                const baseSize = 220; // Larger size for Pilates stickers
+                const positions: Record<string, { xPercent: number; yPercent: number; rotation: number; size: number }> = {
+                    'top-left': { xPercent: 0.05, yPercent: 0.08, rotation: -0.15, size: baseSize },
+                    'top-right': { xPercent: 0.92, yPercent: 0.12, rotation: 0.2, size: baseSize * 0.95 },
+                    'bottom-left': { xPercent: 0.03, yPercent: 0.88, rotation: 0.12, size: baseSize * 1.1 },
+                    'bottom-right': { xPercent: 0.90, yPercent: 0.90, rotation: -0.18, size: baseSize * 0.9 }
+                };
+                
+                const stickerConfigs = [
+                    { path: '/pilates1.png', position: 'top-right' },
+                    { path: '/pilates2.png', position: 'top-left' },
+                    { path: '/pilates3.png', position: 'bottom-right' },
+                    { path: '/pilates4.png', position: 'bottom-left' }
+                ];
 
                 for (const config of stickerConfigs) {
                     try {
@@ -2644,6 +2773,30 @@ export async function generateLiveStripVideo({
                     // Draw snowflakes (sync)
                     drawSnowflakesOverlay(ctx, STRIP_WIDTH, STRIP_HEIGHT);
                     
+                    // Draw preloaded stickers (sync - no async needed)
+                    if (preloadedStickers.length > 0) {
+                        ctx.save();
+                        for (const { img, config } of preloadedStickers) {
+                            const x = STRIP_WIDTH * config.xPercent;
+                            const y = STRIP_HEIGHT * config.yPercent;
+                            const scale = config.size / Math.max(img.width, img.height);
+                            const scaledWidth = img.width * scale;
+                            const scaledHeight = img.height * scale;
+                            
+                            ctx.save();
+                            ctx.translate(x, y);
+                            ctx.rotate(config.rotation);
+                            ctx.globalAlpha = 1.0;
+                            ctx.drawImage(img, -scaledWidth / 2, -scaledHeight / 2, scaledWidth, scaledHeight);
+                            ctx.restore();
+                        }
+                        ctx.restore();
+                    }
+                }
+
+                // 3.6. Draw Pilates overlay elements (stickers on top layer)
+                // Draw AFTER all photos/videos are drawn, so overlay appears on top
+                if (background === 'pilates-theme') {
                     // Draw preloaded stickers (sync - no async needed)
                     if (preloadedStickers.length > 0) {
                         ctx.save();
