@@ -46,12 +46,8 @@ export default function RootLayout({
                         <div className="flex items-center gap-2">
                             <div className="relative">
                                 <div className="absolute inset-0 bg-[#6B5B4F]/10 blur-sm rounded-full"></div>
-                                <img src="/logo-cropped.png" alt="Vintiq" className="h-10 w-auto relative drop-shadow-[0_2px_4px_rgba(74,63,53,0.2)]" />
+                                <img src="/image.png" alt="Vintiq" className="h-12 w-auto relative drop-shadow-[0_2px_4px_rgba(74,63,53,0.2)]" />
                             </div>
-                            <div className="hidden sm:block h-6 w-px bg-[#8B7355]/40 mx-1.5"></div>
-                            <span className="hidden sm:block font-serif text-base text-[#4A3F35] tracking-wider font-medium">
-                                VINTIQ
-                            </span>
                         </div>
                         
                         <nav className="flex items-center gap-4">

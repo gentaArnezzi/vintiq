@@ -2394,6 +2394,37 @@ export async function generateLiveStripVideo({
             // Wait a bit for videos to start playing
             await new Promise(resolve => setTimeout(resolve, 100));
 
+            // Pre-load Christmas sticker images if needed (for overlay on top layer)
+            let preloadedStickers: { img: HTMLImageElement; position: string; config: { xPercent: number; yPercent: number; rotation: number; size: number } }[] = [];
+            if (background === 'christmas-theme' || background === 'christmas-red-theme') {
+                const stickerConfigs = [
+                    { path: '/christmas1.png', position: 'top-left' },
+                    { path: '/christmast2.png', position: 'top-right' },
+                    { path: '/christmast3.png', position: 'bottom-left' },
+                    { path: '/christmast4.png', position: 'bottom-right' }
+                ];
+                
+                const baseSize = 120;
+                const positions: Record<string, { xPercent: number; yPercent: number; rotation: number; size: number }> = {
+                    'top-left': { xPercent: 0.05, yPercent: 0.08, rotation: -0.15, size: baseSize },
+                    'top-right': { xPercent: 0.92, yPercent: 0.05, rotation: 0.2, size: baseSize * 0.95 },
+                    'bottom-left': { xPercent: 0.03, yPercent: 0.88, rotation: 0.12, size: baseSize * 1.1 },
+                    'bottom-right': { xPercent: 0.90, yPercent: 0.90, rotation: -0.18, size: baseSize * 0.9 }
+                };
+
+                for (const config of stickerConfigs) {
+                    try {
+                        const img = await loadImage(config.path);
+                        const posConfig = positions[config.position];
+                        if (posConfig) {
+                            preloadedStickers.push({ img, position: config.position, config: posConfig });
+                        }
+                    } catch (error) {
+                        console.warn(`Failed to load sticker: ${config.path}`, error);
+                    }
+                }
+            }
+
             // Setup MediaRecorder
             // Prioritize MP4 (H.264) for Instagram and gallery compatibility
             const stream = canvas.captureStream(30); // 30 FPS
@@ -2608,8 +2639,30 @@ export async function generateLiveStripVideo({
                 }
 
                 // 3.5. Draw Christmas overlay elements (snowflakes and stickers on top layer)
-                if (background === 'christmas-theme') {
-                    await drawChristmasOverlay(ctx, STRIP_WIDTH, STRIP_HEIGHT, background);
+                // Draw AFTER all photos/videos are drawn, so overlay appears on top
+                if (background === 'christmas-theme' || background === 'christmas-red-theme') {
+                    // Draw snowflakes (sync)
+                    drawSnowflakesOverlay(ctx, STRIP_WIDTH, STRIP_HEIGHT);
+                    
+                    // Draw preloaded stickers (sync - no async needed)
+                    if (preloadedStickers.length > 0) {
+                        ctx.save();
+                        for (const { img, config } of preloadedStickers) {
+                            const x = STRIP_WIDTH * config.xPercent;
+                            const y = STRIP_HEIGHT * config.yPercent;
+                            const scale = config.size / Math.max(img.width, img.height);
+                            const scaledWidth = img.width * scale;
+                            const scaledHeight = img.height * scale;
+                            
+                            ctx.save();
+                            ctx.translate(x, y);
+                            ctx.rotate(config.rotation);
+                            ctx.globalAlpha = 1.0;
+                            ctx.drawImage(img, -scaledWidth / 2, -scaledHeight / 2, scaledWidth, scaledHeight);
+                            ctx.restore();
+                        }
+                        ctx.restore();
+                    }
                 }
 
                 // 4. Draw Branding
