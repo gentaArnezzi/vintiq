@@ -30,7 +30,7 @@ const BACKGROUNDS: { id: BackgroundStyle; name: string; class: string }[] = [
     { id: 'vintage-brown-brick', name: 'Brick Wall', class: 'bg-[#a0462d]' },
     { id: 'christmas-theme', name: 'Christmas Theme', class: 'bg-gradient-to-br from-[#1a1a2e] via-[#16213e] to-[#0f3460]' },
     { id: 'christmas-red-theme', name: 'Christmas Red', class: 'bg-gradient-to-br from-[#7a0f0f] via-[#8b1a1a] to-[#6b0a0a]' },
-    { id: 'pilates-theme', name: 'Pilates Theme', class: 'bg-gradient-to-br from-[#fce4ec] via-[#f8bbd0] to-[#f48fb1]' },
+    { id: 'pilates-theme', name: 'Pilates Girly', class: 'bg-gradient-to-br from-[#fce4ec] via-[#f8bbd0] to-[#f48fb1]' },
 ];
 
 export default function BackgroundSelector({
