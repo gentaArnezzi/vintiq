@@ -20,7 +20,9 @@ export type BackgroundStyle =
     | 'barn-wood'
     | 'vintage-brown'
     | 'vintage-brown-textured'
-    | 'vintage-brown-brick';
+    | 'vintage-brown-brick'
+    | 'christmas-theme'
+    | 'christmas-red-theme';
 
 interface GenerateOptions {
     photos: (string | null)[];
@@ -81,7 +83,7 @@ export async function generatePhotostrip({
     canvas.height = STRIP_HEIGHT;
 
     // 1. Draw Background
-    drawBackground(ctx, STRIP_WIDTH, STRIP_HEIGHT, background);
+    await drawBackground(ctx, STRIP_WIDTH, STRIP_HEIGHT, background);
 
     // 2. Process and Draw Photos
     for (let i = 0; i < photoCount; i++) {
@@ -154,6 +156,11 @@ export async function generatePhotostrip({
         drawFilmStripFrame(ctx, STRIP_WIDTH, STRIP_HEIGHT, PADDING_TOP, PHOTO_HEIGHT, GAP, PHOTO_WIDTH, PADDING_X, true);
     }
 
+    // 3.5. Draw Christmas overlay elements (snowflakes and stickers on top layer)
+    if (background === 'christmas-theme' || background === 'christmas-red-theme') {
+        await drawChristmasOverlay(ctx, STRIP_WIDTH, STRIP_HEIGHT, background);
+    }
+
     // 4. Draw Branding
     drawBranding(ctx, STRIP_WIDTH, STRIP_HEIGHT, background, customText);
 
@@ -184,7 +191,7 @@ async function generateGridLayout(
     ctx.canvas.height = STRIP_HEIGHT;
 
     // 1. Draw Background
-    drawBackground(ctx, STRIP_WIDTH, STRIP_HEIGHT, background);
+    await drawBackground(ctx, STRIP_WIDTH, STRIP_HEIGHT, background);
 
     // 2. Draw Photos (Grid)
     for (let i = 0; i < photoCount; i++) {
@@ -274,6 +281,11 @@ async function generateGridLayout(
         );
     }
 
+    // 3.5. Draw Christmas overlay elements (snowflakes and stickers on top layer)
+    if (background === 'christmas-theme' || background === 'christmas-red-theme') {
+        await drawChristmasOverlay(ctx, STRIP_WIDTH, STRIP_HEIGHT, background);
+    }
+
     // 4. Draw Branding
     drawBranding(ctx, STRIP_WIDTH, STRIP_HEIGHT, background, customText);
 
@@ -301,7 +313,7 @@ async function generatePolaroidLayout(
     ctx.canvas.height = CARD_HEIGHT;
 
     // 1. Draw Background (usually white for polaroid, but let's support others)
-    drawBackground(ctx, CARD_WIDTH, CARD_HEIGHT, background);
+    await drawBackground(ctx, CARD_WIDTH, CARD_HEIGHT, background);
 
     // 2. Draw Photo (Use the first photo only)
     const photoUrl = photos.length > 0 ? photos[0] : null;
@@ -366,13 +378,18 @@ async function generatePolaroidLayout(
         );
     }
 
+    // 3.5. Draw Christmas overlay elements (snowflakes and stickers on top layer)
+    if (background === 'christmas-theme' || background === 'christmas-red-theme') {
+        await drawChristmasOverlay(ctx, CARD_WIDTH, CARD_HEIGHT, background);
+    }
+
     // 4. Draw Branding (smaller/subtle for polaroid)
     drawBranding(ctx, CARD_WIDTH, CARD_HEIGHT, background, customText);
 
     return ctx.canvas;
 }
 
-function drawBackground(
+async function drawBackground(
     ctx: CanvasRenderingContext2D,
     width: number,
     height: number,
@@ -526,6 +543,28 @@ function drawBackground(
             addNoise(ctx, width, height, 0.1);
             // Add brick texture
             drawBrickTexture(ctx, width, height);
+            break;
+        case 'christmas-theme':
+            // Christmas theme background (elements drawn in overlay layer above photos)
+            // Create festive gradient background
+            const christmasGradient = ctx.createLinearGradient(0, 0, width, height);
+            christmasGradient.addColorStop(0, '#1a1a2e');
+            christmasGradient.addColorStop(0.5, '#16213e');
+            christmasGradient.addColorStop(1, '#0f3460');
+            ctx.fillStyle = christmasGradient;
+            ctx.fillRect(0, 0, width, height);
+            // Snowflakes and stickers are drawn in overlay layer after photos
+            break;
+        case 'christmas-red-theme':
+            // Christmas red theme background (elements drawn in overlay layer above photos)
+            // Create festive red gradient background
+            const christmasRedGradient = ctx.createLinearGradient(0, 0, width, height);
+            christmasRedGradient.addColorStop(0, '#7a0f0f');
+            christmasRedGradient.addColorStop(0.5, '#8b1a1a');
+            christmasRedGradient.addColorStop(1, '#6b0a0a');
+            ctx.fillStyle = christmasRedGradient;
+            ctx.fillRect(0, 0, width, height);
+            // Snowflakes and stickers are drawn in overlay layer after photos
             break;
         case 'classic-cream':
         default:
@@ -758,7 +797,9 @@ function drawBranding(
         'barn-wood',
         'vintage-brown',
         'vintage-brown-textured',
-        'vintage-brown-brick'
+        'vintage-brown-brick',
+        'christmas-theme',
+        'christmas-red-theme'
     ];
 
     const isDark = darkBackgrounds.includes(background);
@@ -1848,6 +1889,341 @@ function drawCover(
     ctx.drawImage(img, sx, sy, sWidth, sHeight, 0, 0, width, height);
 }
 
+// Draw snowflakes for Christmas theme
+function drawSnowflakes(ctx: CanvasRenderingContext2D, width: number, height: number) {
+    ctx.save();
+    
+    const snowflakeCount = 40 + Math.floor(Math.random() * 20);
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+    ctx.lineWidth = 1.5;
+    
+    // Border width - area where snowflakes can appear
+    const borderWidth = 40;
+    
+    for (let i = 0; i < snowflakeCount; i++) {
+        let x, y;
+        const positionType = Math.random();
+        
+        // Place snowflakes in border areas (edges) or corners
+        if (positionType < 0.25) {
+            // Top border
+            x = Math.random() * width;
+            y = Math.random() * borderWidth;
+        } else if (positionType < 0.5) {
+            // Right border
+            x = width - borderWidth + Math.random() * borderWidth;
+            y = Math.random() * height;
+        } else if (positionType < 0.75) {
+            // Bottom border
+            x = Math.random() * width;
+            y = height - borderWidth + Math.random() * borderWidth;
+        } else {
+            // Left border
+            x = Math.random() * borderWidth;
+            y = Math.random() * height;
+        }
+        
+        const size = 5 + Math.random() * 15;
+        const rotation = Math.random() * Math.PI * 2;
+        const opacity = 0.4 + Math.random() * 0.5;
+        
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(rotation);
+        ctx.globalAlpha = opacity;
+        
+        // Draw snowflake pattern (6 arms)
+        const arms = 6;
+        for (let j = 0; j < arms; j++) {
+            ctx.save();
+            ctx.rotate((j * Math.PI * 2) / arms);
+            
+            // Main arm
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.lineTo(0, -size);
+            ctx.stroke();
+            
+            // Side branches
+            ctx.beginPath();
+            ctx.moveTo(0, -size * 0.6);
+            ctx.lineTo(-size * 0.3, -size * 0.5);
+            ctx.stroke();
+            
+            ctx.beginPath();
+            ctx.moveTo(0, -size * 0.6);
+            ctx.lineTo(size * 0.3, -size * 0.5);
+            ctx.stroke();
+            
+            ctx.beginPath();
+            ctx.moveTo(0, -size * 0.3);
+            ctx.lineTo(-size * 0.2, -size * 0.25);
+            ctx.stroke();
+            
+            ctx.beginPath();
+            ctx.moveTo(0, -size * 0.3);
+            ctx.lineTo(size * 0.2, -size * 0.25);
+            ctx.stroke();
+            
+            ctx.restore();
+        }
+        
+        // Center dot
+        ctx.beginPath();
+        ctx.arc(0, 0, size * 0.15, 0, Math.PI * 2);
+        ctx.fill();
+        
+        ctx.restore();
+    }
+    
+    ctx.restore();
+}
+
+// Draw Christmas stickers on background
+async function drawChristmasStickers(ctx: CanvasRenderingContext2D, width: number, height: number) {
+    const stickerPaths = [
+        '/christmas1.png',
+        '/christmast2.png',
+        '/christmast3.png',
+        '/christmast4.png'
+    ];
+    
+    // Load all sticker images
+    const stickerImages: (HTMLImageElement | null)[] = [];
+    for (const path of stickerPaths) {
+        try {
+            const img = await loadImage(path);
+            stickerImages.push(img);
+        } catch (error) {
+            console.warn(`Failed to load sticker: ${path}`, error);
+            stickerImages.push(null);
+        }
+    }
+    
+    ctx.save();
+    
+    // Position stickers at border edges and corners
+    const stickerCount = 4 + Math.floor(Math.random() * 3); // 4-6 stickers
+    const borderWidth = 80; // Wider border area for stickers
+    
+    for (let i = 0; i < stickerCount && i < stickerImages.length; i++) {
+        const img = stickerImages[i];
+        if (!img) continue;
+        
+        let x, y;
+        const positionType = Math.random();
+        const size = 70 + Math.random() * 100; // 70-170px (larger stickers)
+        const rotation = (Math.random() - 0.5) * 0.6; // More rotation variation
+        
+        // Scale image to fit size
+        const scale = size / Math.max(img.width, img.height);
+        const scaledWidth = img.width * scale;
+        const scaledHeight = img.height * scale;
+        
+        // Place stickers at border edges, with some overlap allowed
+        if (positionType < 0.25) {
+            // Top border - can overlap with top of photos
+            x = Math.random() * (width - scaledWidth);
+            y = Math.random() * borderWidth - scaledHeight * 0.3; // Allow overlap
+        } else if (positionType < 0.5) {
+            // Right border - can overlap with photos
+            x = width - borderWidth + Math.random() * (borderWidth - scaledWidth * 0.5) - scaledWidth * 0.3;
+            y = Math.random() * height;
+        } else if (positionType < 0.75) {
+            // Bottom border - can overlap with bottom of photos
+            x = Math.random() * (width - scaledWidth);
+            y = height - borderWidth + Math.random() * (borderWidth - scaledHeight * 0.5) - scaledHeight * 0.3;
+        } else {
+            // Left border - can overlap with photos
+            x = Math.random() * (borderWidth - scaledWidth * 0.5) - scaledWidth * 0.3;
+            y = Math.random() * height;
+        }
+        
+        // Ensure stickers don't go completely off canvas
+        x = Math.max(-scaledWidth * 0.3, Math.min(x, width - scaledWidth * 0.7));
+        y = Math.max(-scaledHeight * 0.3, Math.min(y, height - scaledHeight * 0.7));
+        
+        // Draw sticker with rotation and opacity
+        ctx.save();
+        ctx.translate(x + scaledWidth / 2, y + scaledHeight / 2);
+        ctx.rotate(rotation);
+        ctx.globalAlpha = 0.75 + Math.random() * 0.2; // 0.75-0.95 opacity (more visible)
+        ctx.drawImage(img, -scaledWidth / 2, -scaledHeight / 2, scaledWidth, scaledHeight);
+        ctx.restore();
+    }
+    
+    ctx.restore();
+}
+
+// Draw Christmas overlay elements on top of photos (snowflakes and stickers)
+async function drawChristmasOverlay(ctx: CanvasRenderingContext2D, width: number, height: number, background: BackgroundStyle) {
+    if (background !== 'christmas-theme' && background !== 'christmas-red-theme') return;
+    
+    ctx.save();
+    
+    // Draw snowflakes on border areas and can overlap photos
+    drawSnowflakesOverlay(ctx, width, height);
+    
+    // Draw stickers on border areas and can overlap photos
+    await drawChristmasStickersOverlay(ctx, width, height);
+    
+    ctx.restore();
+}
+
+// Draw snowflakes overlay (on top layer, can overlap photos)
+function drawSnowflakesOverlay(ctx: CanvasRenderingContext2D, width: number, height: number) {
+    ctx.save();
+    
+    const snowflakeCount = 50 + Math.floor(Math.random() * 30); // More snowflakes
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+    ctx.lineWidth = 1.5;
+    
+    // Border width - area where snowflakes primarily appear
+    const borderWidth = 60;
+    
+    for (let i = 0; i < snowflakeCount; i++) {
+        let x, y;
+        const positionType = Math.random();
+        
+        // Place snowflakes primarily in border areas, but some can overlap with photos
+        if (positionType < 0.25) {
+            // Top border - can extend into photo area
+            x = Math.random() * width;
+            y = Math.random() * borderWidth * 1.5;
+        } else if (positionType < 0.5) {
+            // Right border - can extend into photo area
+            x = width - borderWidth * 1.5 + Math.random() * borderWidth * 1.5;
+            y = Math.random() * height;
+        } else if (positionType < 0.75) {
+            // Bottom border - can extend into photo area
+            x = Math.random() * width;
+            y = height - borderWidth * 1.5 + Math.random() * borderWidth * 1.5;
+        } else {
+            // Left border - can extend into photo area
+            x = Math.random() * borderWidth * 1.5;
+            y = Math.random() * height;
+        }
+        
+        const size = 4 + Math.random() * 12;
+        const rotation = Math.random() * Math.PI * 2;
+        const opacity = 0.5 + Math.random() * 0.4;
+        
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(rotation);
+        ctx.globalAlpha = opacity;
+        
+        // Draw snowflake pattern (6 arms)
+        const arms = 6;
+        for (let j = 0; j < arms; j++) {
+            ctx.save();
+            ctx.rotate((j * Math.PI * 2) / arms);
+            
+            // Main arm
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.lineTo(0, -size);
+            ctx.stroke();
+            
+            // Side branches
+            ctx.beginPath();
+            ctx.moveTo(0, -size * 0.6);
+            ctx.lineTo(-size * 0.3, -size * 0.5);
+            ctx.stroke();
+            
+            ctx.beginPath();
+            ctx.moveTo(0, -size * 0.6);
+            ctx.lineTo(size * 0.3, -size * 0.5);
+            ctx.stroke();
+            
+            ctx.beginPath();
+            ctx.moveTo(0, -size * 0.3);
+            ctx.lineTo(-size * 0.2, -size * 0.25);
+            ctx.stroke();
+            
+            ctx.beginPath();
+            ctx.moveTo(0, -size * 0.3);
+            ctx.lineTo(size * 0.2, -size * 0.25);
+            ctx.stroke();
+            
+            ctx.restore();
+        }
+        
+        // Center dot
+        ctx.beginPath();
+        ctx.arc(0, 0, size * 0.15, 0, Math.PI * 2);
+        ctx.fill();
+        
+        ctx.restore();
+    }
+    
+    ctx.restore();
+}
+
+// Draw Christmas stickers overlay (on top layer, can overlap photos)
+async function drawChristmasStickersOverlay(ctx: CanvasRenderingContext2D, width: number, height: number) {
+    const stickerConfigs = [
+        { path: '/christmas1.png', position: 'top-left' },
+        { path: '/christmast2.png', position: 'top-right' },
+        { path: '/christmast3.png', position: 'bottom-left' },
+        { path: '/christmast4.png', position: 'bottom-right' }
+    ];
+    
+    // Load all sticker images
+    const stickerImages: { img: HTMLImageElement | null; position: string }[] = [];
+    for (const config of stickerConfigs) {
+        try {
+            const img = await loadImage(config.path);
+            stickerImages.push({ img, position: config.position });
+        } catch (error) {
+            console.warn(`Failed to load sticker: ${config.path}`, error);
+            stickerImages.push({ img: null, position: config.position });
+        }
+    }
+    
+    ctx.save();
+    
+    // Fixed size for stickers (consistent every time)
+    const baseSize = 120; // Base size in pixels
+    
+    // Fixed positions for each sticker (percentages of canvas dimensions)
+    const positions: Record<string, { xPercent: number; yPercent: number; rotation: number; size: number }> = {
+        'top-left': { xPercent: 0.05, yPercent: 0.08, rotation: -0.15, size: baseSize },
+        'top-right': { xPercent: 0.92, yPercent: 0.05, rotation: 0.2, size: baseSize * 0.95 },
+        'bottom-left': { xPercent: 0.03, yPercent: 0.88, rotation: 0.12, size: baseSize * 1.1 },
+        'bottom-right': { xPercent: 0.90, yPercent: 0.90, rotation: -0.18, size: baseSize * 0.9 }
+    };
+    
+    // Draw each sticker at fixed position
+    for (const { img, position } of stickerImages) {
+        if (!img) continue;
+        
+        const posConfig = positions[position];
+        if (!posConfig) continue;
+        
+        // Calculate fixed position based on percentages
+        const x = width * posConfig.xPercent;
+        const y = height * posConfig.yPercent;
+        
+        // Scale image to fixed size
+        const scale = posConfig.size / Math.max(img.width, img.height);
+        const scaledWidth = img.width * scale;
+        const scaledHeight = img.height * scale;
+        
+        // Draw sticker with fixed rotation and opacity
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(posConfig.rotation);
+        ctx.globalAlpha = 1.0; // Full opacity - very visible
+        ctx.drawImage(img, -scaledWidth / 2, -scaledHeight / 2, scaledWidth, scaledHeight);
+        ctx.restore();
+    }
+    
+    ctx.restore();
+}
+
 export function downloadCanvas(canvas: HTMLCanvasElement) {
     const link = document.createElement('a');
     const timestamp = format(new Date(), 'yyyyMMdd-HHmm');
@@ -2079,7 +2455,7 @@ export async function generateLiveStripVideo({
                 }
 
                 // 1. Draw Background (Static)
-                drawBackground(ctx, STRIP_WIDTH, STRIP_HEIGHT, background);
+                await drawBackground(ctx, STRIP_WIDTH, STRIP_HEIGHT, background);
 
                 // 2. Draw Photos/Videos
                 // IMPORTANT: Maintain exact order from input arrays (photos and livePhotos)
@@ -2229,6 +2605,11 @@ export async function generateLiveStripVideo({
                 // For camera-roll-film, extend to bottom including branding area
                 if (background === 'camera-roll-film') {
                     drawFilmStripFrame(ctx, STRIP_WIDTH, STRIP_HEIGHT, PADDING_TOP, PHOTO_HEIGHT, GAP, PHOTO_WIDTH, PADDING_X, true);
+                }
+
+                // 3.5. Draw Christmas overlay elements (snowflakes and stickers on top layer)
+                if (background === 'christmas-theme') {
+                    await drawChristmasOverlay(ctx, STRIP_WIDTH, STRIP_HEIGHT, background);
                 }
 
                 // 4. Draw Branding

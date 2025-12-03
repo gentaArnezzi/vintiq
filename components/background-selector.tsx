@@ -28,6 +28,8 @@ const BACKGROUNDS: { id: BackgroundStyle; name: string; class: string }[] = [
     { id: 'vintage-brown', name: 'Rustic Terracotta', class: 'bg-[#a0462d]' },
     { id: 'vintage-brown-textured', name: 'Weathered Rust', class: 'bg-[#a0462d]' },
     { id: 'vintage-brown-brick', name: 'Brick Wall', class: 'bg-[#a0462d]' },
+    { id: 'christmas-theme', name: 'Christmas Theme', class: 'bg-gradient-to-br from-[#1a1a2e] via-[#16213e] to-[#0f3460]' },
+    { id: 'christmas-red-theme', name: 'Christmas Red', class: 'bg-gradient-to-br from-[#7a0f0f] via-[#8b1a1a] to-[#6b0a0a]' },
 ];
 
 export default function BackgroundSelector({
@@ -47,7 +49,9 @@ export default function BackgroundSelector({
                     'barn-wood',
                     'vintage-brown',
                     'vintage-brown-textured',
-                    'vintage-brown-brick'
+                    'vintage-brown-brick',
+                    'christmas-theme',
+                    'christmas-red-theme'
                 ];
                 const isDark = darkBackgrounds.includes(bg.id);
 
@@ -64,6 +68,51 @@ export default function BackgroundSelector({
                     >
                         {/* Background Preview */}
                         <div className={cn("absolute inset-0", bg.class)} />
+
+                        {/* Christmas Stickers Preview - only for Christmas themes */}
+                        {(bg.id === 'christmas-theme' || bg.id === 'christmas-red-theme') && (
+                            <>
+                                {/* Small stickers in corners */}
+                                <img 
+                                    src="/christmas1.png" 
+                                    alt="" 
+                                    className="absolute top-0.5 left-0.5 w-5 h-5 opacity-90 object-contain"
+                                />
+                                <img 
+                                    src="/christmast2.png" 
+                                    alt="" 
+                                    className="absolute top-0.5 right-0.5 w-5 h-5 opacity-90 object-contain"
+                                />
+                                <img 
+                                    src="/christmast3.png" 
+                                    alt="" 
+                                    className="absolute bottom-0.5 left-0.5 w-5 h-5 opacity-90 object-contain"
+                                />
+                                <img 
+                                    src="/christmast4.png" 
+                                    alt="" 
+                                    className="absolute bottom-0.5 right-0.5 w-5 h-5 opacity-90 object-contain"
+                                />
+                                
+                                {/* Small snowflakes scattered around */}
+                                <svg className="absolute top-2 left-1/4 w-3 h-3 text-white/70" viewBox="0 0 20 20" fill="none">
+                                    <path d="M10 0 L10 4 M10 16 L10 20 M0 10 L4 10 M16 10 L20 10 M2.93 2.93 L5.66 5.66 M14.34 14.34 L17.07 17.07 M2.93 17.07 L5.66 14.34 M14.34 5.66 L17.07 2.93" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                                    <circle cx="10" cy="10" r="1" fill="currentColor"/>
+                                </svg>
+                                <svg className="absolute top-3 right-1/3 w-2.5 h-2.5 text-white/60" viewBox="0 0 20 20" fill="none">
+                                    <path d="M10 0 L10 4 M10 16 L10 20 M0 10 L4 10 M16 10 L20 10 M2.93 2.93 L5.66 5.66 M14.34 14.34 L17.07 17.07 M2.93 17.07 L5.66 14.34 M14.34 5.66 L17.07 2.93" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                                    <circle cx="10" cy="10" r="1" fill="currentColor"/>
+                                </svg>
+                                <svg className="absolute bottom-2 left-1/3 w-3 h-3 text-white/65" viewBox="0 0 20 20" fill="none">
+                                    <path d="M10 0 L10 4 M10 16 L10 20 M0 10 L4 10 M16 10 L20 10 M2.93 2.93 L5.66 5.66 M14.34 14.34 L17.07 17.07 M2.93 17.07 L5.66 14.34 M14.34 5.66 L17.07 2.93" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                                    <circle cx="10" cy="10" r="1" fill="currentColor"/>
+                                </svg>
+                                <svg className="absolute bottom-3 right-1/4 w-2.5 h-2.5 text-white/55" viewBox="0 0 20 20" fill="none">
+                                    <path d="M10 0 L10 4 M10 16 L10 20 M0 10 L4 10 M16 10 L20 10 M2.93 2.93 L5.66 5.66 M14.34 14.34 L17.07 17.07 M2.93 17.07 L5.66 14.34 M14.34 5.66 L17.07 2.93" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                                    <circle cx="10" cy="10" r="1" fill="currentColor"/>
+                                </svg>
+                            </>
+                        )}
 
                         {/* Label */}
                         <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/5 transition-colors">

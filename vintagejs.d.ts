@@ -27,3 +27,4 @@ declare module 'vintagejs' {
     export default vintagejs;
 }
 
+
